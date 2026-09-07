@@ -45,7 +45,7 @@ public class RedisCacheManagerConfig
     public CacheManager cacheManager(RedisConnectionFactory connectionFactory, CacheProperties properties,
             RedisSerializer<Object> valueSerializer)
     {
-        RedisCacheConfiguration defaults = RedisCacheConfig.redisDefaults(properties, valueSerializer);
+        RedisCacheConfiguration defaults = RedisCacheDefaultsFactory.buildDefaults(properties, valueSerializer);
         return RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(defaults)
                 .initialCacheNames(new HashSet<>(properties.getCacheNames()))

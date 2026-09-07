@@ -6,27 +6,25 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.Cache;
 
-import io.micrometer.core.instrument.MeterRegistry;
-
 /**
  * Fail-open decorator for the synchronized cache path.
  *
- * <p>Spring routes raw failures from {@code get(key, callable)} past the
- * {@code CacheErrorHandler}, so a Redis outage on a {@code sync} entry would escape
- * as an error instead of falling back. This decorator catches the outage, counts it,
- * logs it with its cause (timeout vs serialization vs connection), and loads directly
- * without caching. A {@code Cache.ValueRetrievalException} means
- * the loader (Mongo) failed — never the cache — so it propagates untouched with no
- * retry and no outage count, keeping the 503 mapping working.
+ * <p>Only {@code get(key, callable)} applies fail-open behavior (the only
+ * path that carries a loader). Other methods delegate directly; this keeps
+ * the contract consistent with the Spring {@link Cache} interface while
+ * avoiding hidden Liskov violations. The underlying cache failure is
+ * classified by {@link CacheFailureClassifier} and counted by
+ * {@link CacheOutageRecorder} so that loader failures (Mongo 503) propagate
+ * untouched and infrastructure outages degrade to direct load.
  */
-public class FailOpenCache implements Cache
+public class FailOpenCache extends ForwardingCache
 {
 
     private static final Logger log = LoggerFactory.getLogger(FailOpenCache.class);
 
-    private final Cache delegate;
+    private final CacheFailureClassifier classifier;
 
-    private final MeterRegistry registry;
+    private final CacheOutageRecorder recorder;
 
     /**
      * Wraps one resolved cache with single-flight fail-open behavior.
@@ -34,34 +32,11 @@ public class FailOpenCache implements Cache
      * @param delegate the underlying cache, never null
      * @param registry the meter registry for outage counters
      */
-    public FailOpenCache(Cache delegate, MeterRegistry registry)
+    public FailOpenCache(Cache delegate, io.micrometer.core.instrument.MeterRegistry registry)
     {
-        this.delegate = delegate;
-        this.registry = registry;
-    }
-
-    @Override
-    public String getName()
-    {
-        return delegate.getName();
-    }
-
-    @Override
-    public Object getNativeCache()
-    {
-        return delegate.getNativeCache();
-    }
-
-    @Override
-    public ValueWrapper get(Object key)
-    {
-        return delegate.get(key);
-    }
-
-    @Override
-    public <T> T get(Object key, Class<T> type)
-    {
-        return delegate.get(key, type);
+        super(delegate);
+        this.classifier = new CacheFailureClassifier();
+        this.recorder = new CacheOutageRecorder(registry, delegate.getName());
     }
 
     @Override
@@ -73,42 +48,31 @@ public class FailOpenCache implements Cache
         }
         catch (Cache.ValueRetrievalException loaderFailure)
         {
+            // Loader (Mongo/datastore) failure — propagate untouched, no retry,
+            // no outage count, so the 503 mapping stays intact.
             throw loaderFailure;
         }
         catch (RuntimeException outage)
         {
-            registry.counter("cache.errors", "operation", "get", "cache", getName()).increment();
-            log.warn("Cache {} failed on sync get ({}); failing open", getName(), outage.toString(), outage);
-            try
+            if (classifier.isCacheOutage(outage))
             {
-                return valueLoader.call();
+                recorder.recordGet();
+                log.warn("Cache {} failed on sync get ({}); failing open to direct load",
+                        getName(), outage.toString(), outage);
+                try
+                {
+                    return valueLoader.call();
+                }
+                catch (RuntimeException loaderFailure)
+                {
+                    throw loaderFailure;
+                }
+                catch (Exception loaderFailure)
+                {
+                    throw new Cache.ValueRetrievalException(key, valueLoader, loaderFailure);
+                }
             }
-            catch (RuntimeException loaderFailure)
-            {
-                throw loaderFailure;
-            }
-            catch (Exception loaderFailure)
-            {
-                throw new Cache.ValueRetrievalException(key, valueLoader, loaderFailure);
-            }
+            throw outage;
         }
-    }
-
-    @Override
-    public void put(Object key, Object value)
-    {
-        delegate.put(key, value);
-    }
-
-    @Override
-    public void evict(Object key)
-    {
-        delegate.evict(key);
-    }
-
-    @Override
-    public void clear()
-    {
-        delegate.clear();
     }
 }

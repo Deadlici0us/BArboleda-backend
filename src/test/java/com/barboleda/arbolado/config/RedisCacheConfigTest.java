@@ -98,7 +98,8 @@ class RedisCacheConfigTest
         properties.getRedis().setUseKeyPrefix(true);
 
         // When building the manager defaults
-        RedisCacheConfiguration defaults = RedisCacheConfig.redisDefaults(properties, config.cacheValueSerializer());
+        RedisCacheConfiguration defaults = RedisCacheDefaultsFactory.buildDefaults(properties,
+                config.cacheValueSerializer());
 
         // Then TTL, no-nulls and the default name prefix match the YAML contract
         assertThat(defaults.getTtl()).isEqualTo(Duration.ofDays(30));

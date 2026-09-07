@@ -1,6 +1,7 @@
 package com.barboleda.arbolado.config;
 
 import java.util.Collection;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
@@ -22,6 +23,8 @@ public class FailOpenCacheResolver implements CacheResolver
 
     private final MeterRegistry registry;
 
+    private final ConcurrentHashMap<String, Cache> resolved = new ConcurrentHashMap<>();
+
     /**
      * Builds the resolver over the auto-configured manager.
      *
@@ -42,11 +45,14 @@ public class FailOpenCacheResolver implements CacheResolver
 
     private Cache requireCache(String name)
     {
-        Cache cache = delegate.getCache(name);
-        if (cache == null)
+        return resolved.computeIfAbsent(name, n ->
         {
-            throw new IllegalArgumentException("No cache named " + name);
-        }
-        return new FailOpenCache(cache, registry);
+            Cache cache = delegate.getCache(n);
+            if (cache == null)
+            {
+                throw new IllegalArgumentException("No cache named " + n);
+            }
+            return new FailOpenCache(cache, registry);
+        });
     }
 }

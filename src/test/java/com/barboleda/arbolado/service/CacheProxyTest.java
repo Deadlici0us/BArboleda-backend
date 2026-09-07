@@ -26,8 +26,6 @@ import org.springframework.cache.support.SimpleCacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
-import org.springframework.data.geo.Distance;
-import org.springframework.data.geo.Point;
 
 import com.barboleda.arbolado.config.RedisCacheConfig;
 import com.barboleda.arbolado.domain.Arbol;
@@ -57,17 +55,14 @@ class CacheProxyTest
     @DisplayName("second identical normalized call hits the cache, not the port")
     void secondCallHitsCache()
     {
-        // Given one stored tree
         Arbol entity = new Arbol("x", null, 1, "Eucalyptus", 10, 40, 1, -58.3816, -34.6037, "csv", false);
-        when(port.searchNear(any(Point.class), any(Distance.class))).thenReturn(List.of(entity));
+        when(port.searchNear(any(GeoCenter.class), any(RadiusMeters.class))).thenReturn(List.of(entity));
 
-        // When searching twice with the same normalized inputs
         SearchRequest request = new SearchRequest(-34.6037, -58.3816, 500.0);
         SearchResponse first = service.findNearby(request);
         SearchResponse second = service.findNearby(request);
 
-        // Then the port ran once and both responses match
-        verify(port, times(1)).searchNear(any(Point.class), any(Distance.class));
+        verify(port, times(1)).searchNear(any(GeoCenter.class), any(RadiusMeters.class));
         assertThat(first).isEqualTo(second);
         assertThat(first.items()).hasSize(1);
     }
@@ -76,15 +71,13 @@ class CacheProxyTest
     @DisplayName("32 parallel cold misses single-flight to one port call")
     void parallelColdMissesSingleFlight() throws Exception
     {
-        // Given one stored tree behind an empty cache and a slow port
         Arbol entity = new Arbol("x", null, 1, "Eucalyptus", 10, 40, 1, -58.3816, -34.6037, "csv", false);
-        when(port.searchNear(any(Point.class), any(Distance.class))).thenAnswer(invocation ->
+        when(port.searchNear(any(GeoCenter.class), any(RadiusMeters.class))).thenAnswer(invocation ->
         {
             Thread.sleep(50);
             return List.of(entity);
         });
 
-        // When 32 threads search the same inputs at once (a cold key no other test touches)
         int threads = 32;
         ExecutorService pool = Executors.newFixedThreadPool(threads);
         try
@@ -110,95 +103,50 @@ class CacheProxyTest
             pool.shutdownNow();
         }
 
-        // Then the port ran exactly once — the locking cache coalesced the miss
-        verify(port, times(1)).searchNear(any(Point.class), any(Distance.class));
+        verify(port, times(1)).searchNear(any(GeoCenter.class), any(RadiusMeters.class));
     }
 
-    /**
-     * Minimal web-free context: real service beans plus a simple cache manager.
-     */
     @Configuration
     @EnableCaching
     @Import(RedisCacheConfig.class)
     static class ProxyConfig
     {
-
-        /**
-         * Builds the service facade from injected collaborators.
-         *
-         * @param normalizer the coordinate grid strategy
-         * @param cachedSearch the cache-owning search bean
-         * @return the facade
-         */
         @Bean
         ArbolService arbolService(CoordinateNormalizationStrategy normalizer, CachedArbolSearch cachedSearch)
         {
             return new ArbolService(normalizer, cachedSearch);
         }
 
-        /**
-         * Builds the cached search from injected collaborators.
-         *
-         * @param port the mocked geo search port
-         * @param queryFactory the lon-first query factory
-         * @param mapper the entity-to-DTO mapper
-         * @return the cached search
-         */
         @Bean
-        CachedArbolSearch cachedArbolSearch(ArbolSearchPort port, GeoQueryFactory queryFactory, ArbolMapper mapper)
+        CachedArbolSearch cachedArbolSearch(ArbolSearchPort port, ArbolMapper mapper)
         {
-            return new CachedArbolSearch(port, queryFactory, mapper);
+            return new CachedArbolSearch(port, mapper);
         }
 
-        /**
-         * Builds the normalization strategy.
-         *
-         * @return the rounding strategy
-         */
         @Bean
         CoordinateNormalizationStrategy normalizer()
         {
             return new RoundingNormalizationStrategy();
         }
 
-        /**
-         * Builds the query factory.
-         *
-         * @return the factory
-         */
-        @Bean
-        GeoQueryFactory queryFactory()
-        {
-            return new GeoQueryFactory();
-        }
-
-        /**
-         * Builds the mapper.
-         *
-         * @return the mapper
-         */
         @Bean
         ArbolMapper mapper()
         {
             return new ArbolMapper();
         }
 
-        /**
-         * Builds the key factory behind the cache SpEL reference.
-         *
-         * @return the factory
-         */
+        @Bean
+        CacheKeyGeneratorAdapter cacheKeyGenerator(CacheKeyFactory factory)
+        {
+            return new CacheKeyGeneratorAdapter(factory);
+        }
+
         @Bean
         CacheKeyFactory cacheKeyFactory()
         {
             return new CacheKeyFactory();
         }
 
-        /**
-         * Builds an in-memory cache manager standing in for Redis.
-         *
-         * @return the cache manager
-         */
         @Bean
         CacheManager cacheManager()
         {
@@ -207,11 +155,6 @@ class CacheProxyTest
             return manager;
         }
 
-        /**
-         * Builds a no-op meter registry for the context.
-         *
-         * @return the registry
-         */
         @Bean
         MeterRegistry meterRegistry()
         {

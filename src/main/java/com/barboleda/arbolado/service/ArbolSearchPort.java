@@ -2,9 +2,6 @@ package com.barboleda.arbolado.service;
 
 import java.util.List;
 
-import org.springframework.data.geo.Distance;
-import org.springframework.data.geo.Point;
-
 import com.barboleda.arbolado.domain.Arbol;
 
 /**
@@ -16,9 +13,9 @@ public interface ArbolSearchPort
     /**
      * Finds trees near a center point, raw and unsliced.
      *
-     * @param center query center in lon-first order
-     * @param maxDistance maximum distance in kilometers
+     * @param center normalized search center in lon-first order
+     * @param radius rounded radius in whole meters
      * @return matching trees in ascending distance order, up to the caller's probe size
      */
-    List<Arbol> searchNear(Point center, Distance maxDistance);
+    List<Arbol> searchNear(GeoCenter center, RadiusMeters radius);
 }

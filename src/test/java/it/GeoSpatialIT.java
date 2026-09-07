@@ -11,9 +11,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.dao.DataAccessException;
-import org.springframework.data.geo.Distance;
-import org.springframework.data.geo.Metrics;
-import org.springframework.data.geo.Point;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.geo.GeoJsonPoint;
 import org.springframework.data.mongodb.core.index.GeoSpatialIndexType;
@@ -23,7 +20,9 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import com.barboleda.arbolado.domain.Arbol;
+import com.barboleda.arbolado.service.GeoCenter;
 import com.barboleda.arbolado.service.MongoArbolSearchAdapter;
+import com.barboleda.arbolado.service.RadiusMeters;
 import com.mongodb.client.MongoClients;
 
 /**
@@ -72,8 +71,8 @@ class GeoSpatialIT
 
         // When searching a 1m radius versus a 3m radius
         // Then the meter scale holds both ways
-        assertThat(adapter.searchNear(new Point(0.0, 0.0), new Distance(0.001, Metrics.KILOMETERS))).isEmpty();
-        assertThat(adapter.searchNear(new Point(0.0, 0.0), new Distance(0.003, Metrics.KILOMETERS)))
+        assertThat(adapter.searchNear(new GeoCenter(0.0, 0.0), new RadiusMeters(1))).isEmpty();
+        assertThat(adapter.searchNear(new GeoCenter(0.0, 0.0), new RadiusMeters(3)))
                 .extracting(Arbol::getId)
                 .containsExactly("close");
     }
@@ -87,8 +86,8 @@ class GeoSpatialIT
 
         // When searching 990m versus 1000m
         // Then the ceiling behaves in meters
-        assertThat(adapter.searchNear(new Point(0.0, 0.0), new Distance(0.99, Metrics.KILOMETERS))).isEmpty();
-        assertThat(adapter.searchNear(new Point(0.0, 0.0), new Distance(1.0, Metrics.KILOMETERS)))
+        assertThat(adapter.searchNear(new GeoCenter(0.0, 0.0), new RadiusMeters(990))).isEmpty();
+        assertThat(adapter.searchNear(new GeoCenter(0.0, 0.0), new RadiusMeters(1000)))
                 .extracting(Arbol::getId)
                 .containsExactly("edge");
     }
@@ -104,7 +103,7 @@ class GeoSpatialIT
 
         // When searching
         // Then Mongo returns them nearest-first regardless of insert order
-        assertThat(adapter.searchNear(new Point(0.0, 0.0), new Distance(1.0, Metrics.KILOMETERS)))
+        assertThat(adapter.searchNear(new GeoCenter(0.0, 0.0), new RadiusMeters(1000)))
                 .extracting(Arbol::getId)
                 .containsExactly("near", "mid", "far");
     }
@@ -119,8 +118,8 @@ class GeoSpatialIT
 
         // When searching
         // Then Mongo refuses the geo query — the index must exist out-of-band
-        assertThatThrownBy(() -> adapter.searchNear(new Point(-58.3816, -34.6037),
-                new Distance(1.0, Metrics.KILOMETERS))).isInstanceOf(DataAccessException.class);
+        assertThatThrownBy(() -> adapter.searchNear(new GeoCenter(-58.3816, -34.6037),
+                new RadiusMeters(1000))).isInstanceOf(DataAccessException.class);
     }
 
     @Test
@@ -132,10 +131,10 @@ class GeoSpatialIT
 
         // When searching from just west of the antimeridian
         // Then the 30m radius wraps and matches, while the 10m radius does not
-        assertThat(adapter.searchNear(new Point(-179.9999, 0.0), new Distance(0.03, Metrics.KILOMETERS)))
+        assertThat(adapter.searchNear(new GeoCenter(-179.9999, 0.0), new RadiusMeters(30)))
                 .extracting(Arbol::getId)
                 .containsExactly("wrapped");
-        assertThat(adapter.searchNear(new Point(-179.9999, 0.0), new Distance(0.01, Metrics.KILOMETERS))).isEmpty();
+        assertThat(adapter.searchNear(new GeoCenter(-179.9999, 0.0), new RadiusMeters(10))).isEmpty();
     }
 
     @Test
@@ -147,7 +146,7 @@ class GeoSpatialIT
 
         // When searching
         // Then the MAX_ITEMS + 1 probe arrives intact for the service to slice
-        List<Arbol> found = adapter.searchNear(new Point(0.0, 0.0), new Distance(1.0, Metrics.KILOMETERS));
+        List<Arbol> found = adapter.searchNear(new GeoCenter(0.0, 0.0), new RadiusMeters(1000));
         assertThat(found).hasSize(101);
     }
 

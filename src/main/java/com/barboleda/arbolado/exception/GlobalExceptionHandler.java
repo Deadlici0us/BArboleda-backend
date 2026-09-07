@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
+import com.barboleda.arbolado.config.ProblemDetailFactory;
 import com.mongodb.MongoException;
 
 /**
@@ -20,6 +21,8 @@ import com.mongodb.MongoException;
 @RestControllerAdvice
 public class GlobalExceptionHandler
 {
+
+    private final ProblemDetailFactory factory = new ProblemDetailFactory();
 
     /**
      * Handles bean validation failures on the request body.
@@ -32,7 +35,7 @@ public class GlobalExceptionHandler
     {
         String detail = failure.getBindingResult().getFieldErrors().stream().findFirst()
                 .map(error -> error.getField() + " " + error.getDefaultMessage()).orElse("Invalid request");
-        return problem(HttpStatus.BAD_REQUEST, detail);
+        return factory.problem(HttpStatus.BAD_REQUEST, detail);
     }
 
     /**
@@ -44,7 +47,7 @@ public class GlobalExceptionHandler
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ProblemDetail> handleNotReadable(HttpMessageNotReadableException failure)
     {
-        return problem(HttpStatus.BAD_REQUEST, "Malformed JSON request body");
+        return factory.problem(HttpStatus.BAD_REQUEST, "Malformed JSON request body");
     }
 
     /**
@@ -56,7 +59,7 @@ public class GlobalExceptionHandler
     @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
     public ResponseEntity<ProblemDetail> handleUnsupportedMedia(HttpMediaTypeNotSupportedException failure)
     {
-        return problem(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "Content type must be application/json");
+        return factory.problem(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "Content type must be application/json");
     }
 
     /**
@@ -68,7 +71,8 @@ public class GlobalExceptionHandler
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
     public ResponseEntity<ProblemDetail> handleMethodNotAllowed(HttpRequestMethodNotSupportedException failure)
     {
-        return problem(HttpStatus.METHOD_NOT_ALLOWED, "Method " + failure.getMethod() + " is not supported here");
+        String methodMsg = "Method " + failure.getMethod() + " is not supported here";
+        return factory.problem(HttpStatus.METHOD_NOT_ALLOWED, methodMsg);
     }
 
     /**
@@ -81,7 +85,7 @@ public class GlobalExceptionHandler
     @ExceptionHandler(InvalidSearchRequestException.class)
     public ResponseEntity<ProblemDetail> handleInvalidSearch(InvalidSearchRequestException failure)
     {
-        return problem(HttpStatus.BAD_REQUEST, failure.getMessage());
+        return factory.problem(HttpStatus.BAD_REQUEST, failure.getMessage());
     }
 
     /**
@@ -93,7 +97,7 @@ public class GlobalExceptionHandler
     @ExceptionHandler(MongoException.class)
     public ResponseEntity<ProblemDetail> handleMongo(MongoException failure)
     {
-        return problem(HttpStatus.SERVICE_UNAVAILABLE, "Datastore temporarily unavailable");
+        return factory.problem(HttpStatus.SERVICE_UNAVAILABLE, "Datastore temporarily unavailable");
     }
 
     /**
@@ -105,7 +109,7 @@ public class GlobalExceptionHandler
     @ExceptionHandler(DataAccessException.class)
     public ResponseEntity<ProblemDetail> handleDataAccess(DataAccessException failure)
     {
-        return problem(HttpStatus.SERVICE_UNAVAILABLE, "Datastore temporarily unavailable");
+        return factory.problem(HttpStatus.SERVICE_UNAVAILABLE, "Datastore temporarily unavailable");
     }
 
     /**
@@ -117,7 +121,7 @@ public class GlobalExceptionHandler
     @ExceptionHandler(NoResourceFoundException.class)
     public ResponseEntity<ProblemDetail> handleNotFound(NoResourceFoundException failure)
     {
-        return problem(HttpStatus.NOT_FOUND, "No resource at " + failure.getResourcePath());
+        return factory.problem(HttpStatus.NOT_FOUND, "No resource at " + failure.getResourcePath());
     }
 
     /**
@@ -129,11 +133,7 @@ public class GlobalExceptionHandler
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ProblemDetail> handleFallback(Exception failure)
     {
-        return problem(HttpStatus.INTERNAL_SERVER_ERROR, "Unexpected error");
+        return factory.problem(HttpStatus.INTERNAL_SERVER_ERROR, "Unexpected error");
     }
 
-    private ResponseEntity<ProblemDetail> problem(HttpStatus status, String detail)
-    {
-        return ResponseEntity.status(status).body(ProblemDetail.forStatusAndDetail(status, detail));
-    }
 }

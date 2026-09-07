@@ -16,4 +16,15 @@ public interface CoordinateNormalizationStrategy
      * @throws IllegalArgumentException if {@code value} is null, NaN or infinite
      */
     Double normalize(Double value);
+
+    /**
+     * Primitive overload that avoids autoboxing on the hot search path.
+     *
+     * @param value the raw coordinate
+     * @return the grid-aligned coordinate
+     */
+    default double normalize(double value)
+    {
+        return normalize(Double.valueOf(value));
+    }
 }

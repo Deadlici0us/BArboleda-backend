@@ -34,4 +34,17 @@ public class RoundingNormalizationStrategy implements CoordinateNormalizationStr
                 .doubleValue();
         return rounded == 0.0 ? 0.0 : rounded;
     }
+
+    @Override
+    public double normalize(double value)
+    {
+        if (!Double.isFinite(value))
+        {
+            throw new IllegalArgumentException("Coordinate must be finite, got " + value);
+        }
+        double rounded = BigDecimal.valueOf(value)
+                .setScale(SearchLimits.COORDINATE_SCALE, RoundingMode.HALF_UP)
+                .doubleValue();
+        return rounded == 0.0 ? 0.0 : rounded;
+    }
 }

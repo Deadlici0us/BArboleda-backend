@@ -21,7 +21,6 @@ import org.springframework.data.geo.Distance;
 import org.springframework.data.geo.GeoResult;
 import org.springframework.data.geo.GeoResults;
 import org.springframework.data.geo.Metrics;
-import org.springframework.data.geo.Point;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.geo.GeoJsonPoint;
 import org.springframework.data.mongodb.core.query.NearQuery;
@@ -38,9 +37,9 @@ class MongoArbolSearchAdapterTest
 
     private final MongoArbolSearchAdapter adapter = new MongoArbolSearchAdapter(mongoTemplate);
 
-    private static final Point CENTER = new Point(-58.3816, -34.6037);
+    private static final GeoCenter CENTER = new GeoCenter(-58.3816, -34.6037);
 
-    private static final Distance HALF_KM = new Distance(0.5, Metrics.KILOMETERS);
+    private static final RadiusMeters HALF_KM = new RadiusMeters(500);
 
     @Test
     @DisplayName("GeoResults unwrap to entities in the given order")
@@ -66,7 +65,7 @@ class MongoArbolSearchAdapterTest
         stubResults(tree("x"));
 
         // When searching a 500m radius
-        adapter.searchNear(CENTER, new Distance(0.5, Metrics.KILOMETERS));
+        adapter.searchNear(CENTER, new RadiusMeters(500));
 
         // Then the captured query is spherical, probes MAX_ITEMS + 1, and the wire
         // radians × earth-radius-km × 1000 land back on meters (the driver takes radians)

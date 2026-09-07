@@ -22,21 +22,17 @@ public class CachedArbolSearch
 
     private final ArbolSearchPort searchPort;
 
-    private final GeoQueryFactory queryFactory;
-
     private final ArbolMapper mapper;
 
     /**
      * Builds the cached search over its collaborators.
      *
      * @param searchPort the geo search port
-     * @param queryFactory the lon-first query factory
      * @param mapper the entity-to-DTO mapper
      */
-    public CachedArbolSearch(ArbolSearchPort searchPort, GeoQueryFactory queryFactory, ArbolMapper mapper)
+    public CachedArbolSearch(ArbolSearchPort searchPort, ArbolMapper mapper)
     {
         this.searchPort = searchPort;
-        this.queryFactory = queryFactory;
         this.mapper = mapper;
     }
 
@@ -49,10 +45,11 @@ public class CachedArbolSearch
      * @return mapped DTOs in ascending distance order, up to {@code MAX_ITEMS + 1}
      */
     @Cacheable(value = SearchLimits.CACHE_NAME, cacheResolver = "failOpenCacheResolver",
-            key = "@cacheKeyFactory.create(#latitude,#longitude,#radiusMeters)", sync = true)
+            keyGenerator = "cacheKeyGenerator", sync = true)
     public List<ArbolResponse> findNearbyCached(double latitude, double longitude, int radiusMeters)
     {
-        GeoQuery query = queryFactory.create(longitude, latitude, radiusMeters);
-        return searchPort.searchNear(query.center(), query.maxDistance()).stream().map(mapper::toResponse).toList();
+        GeoCenter center = new GeoCenter(longitude, latitude);
+        RadiusMeters radius = new RadiusMeters(radiusMeters);
+        return searchPort.searchNear(center, radius).stream().map(mapper::toResponse).toList();
     }
 }

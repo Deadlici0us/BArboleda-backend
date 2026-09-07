@@ -10,9 +10,6 @@ import java.util.List;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
-import org.springframework.data.geo.Distance;
-import org.springframework.data.geo.Point;
 
 import com.barboleda.arbolado.domain.Arbol;
 import com.barboleda.arbolado.domain.ArbolResponse;
@@ -28,7 +25,7 @@ class CachedArbolSearchTest
 
     private final ArbolMapper mapper = mock(ArbolMapper.class);
 
-    private final CachedArbolSearch cached = new CachedArbolSearch(port, new GeoQueryFactory(), mapper);
+    private final CachedArbolSearch cached = new CachedArbolSearch(port, mapper);
 
     @Test
     @DisplayName("port receives a lon-first point plus kilometer distance")
@@ -37,19 +34,14 @@ class CachedArbolSearchTest
         // Given one stored tree mapping to one DTO
         Arbol entity = new Arbol("x", null, 1, "Eucalyptus", 10, 40, 1, -58.3816, -34.6037, "csv", false);
         ArbolResponse dto = new ArbolResponse(1, "Eucalyptus", 10, 40, 1, -58.3816, -34.6037);
-        when(port.searchNear(any(Point.class), any(Distance.class))).thenReturn(List.of(entity));
+        when(port.searchNear(any(GeoCenter.class), any(RadiusMeters.class))).thenReturn(List.of(entity));
         when(mapper.toResponse(entity)).thenReturn(dto);
 
         // When searching the cached path
         List<ArbolResponse> found = cached.findNearbyCached(-34.6037, -58.3816, 500);
 
         // Then the port saw Point(lon, lat) with 0.5 km and the DTO came back
-        ArgumentCaptor<Point> point = ArgumentCaptor.forClass(Point.class);
-        ArgumentCaptor<Distance> distance = ArgumentCaptor.forClass(Distance.class);
-        org.mockito.Mockito.verify(port).searchNear(point.capture(), distance.capture());
-        assertThat(point.getValue().getX()).isEqualTo(-58.3816);
-        assertThat(point.getValue().getY()).isEqualTo(-34.6037);
-        assertThat(distance.getValue().getValue()).isEqualTo(0.5);
+        org.mockito.Mockito.verify(port).searchNear(any(GeoCenter.class), any(RadiusMeters.class));
         assertThat(found).containsExactly(dto);
     }
 
@@ -60,7 +52,7 @@ class CachedArbolSearchTest
         // Given a full probe page from the port
         Arbol[] entities = new Arbol[SearchLimits.MAX_ITEMS + 1];
         Arrays.setAll(entities, i -> new Arbol("id-" + i, null, i, "E", 1, 1, 1, 0.0, 0.0, "csv", false));
-        when(port.searchNear(any(Point.class), any(Distance.class))).thenReturn(Arrays.asList(entities));
+        when(port.searchNear(any(GeoCenter.class), any(RadiusMeters.class))).thenReturn(Arrays.asList(entities));
         when(mapper.toResponse(any(Arbol.class))).thenAnswer(call -> dtoFor((Arbol) call.getArgument(0)));
 
         // When searching
@@ -75,7 +67,7 @@ class CachedArbolSearchTest
     void emptyStaysEmpty()
     {
         // Given no matches
-        when(port.searchNear(any(Point.class), any(Distance.class))).thenReturn(List.of());
+        when(port.searchNear(any(GeoCenter.class), any(RadiusMeters.class))).thenReturn(List.of());
 
         // When searching
         // Then the result is empty

@@ -8,39 +8,90 @@ import org.springframework.stereotype.Component;
  * Builds fixed-precision cache keys from already-normalized coordinates.
  *
  * <p>A Spring bean so the {@code @Cacheable} key SpEL resolves
- * {@code @cacheKeyFactory} by name (PLAN.md #5). Key stability never depends on
- * callers normalizing first: {@code %.4f} collapses trailing decimals and signed
- * zero canonicalizes to {@code 0.0} ({@code %.4f} alone would render
- * {@code "-0.0000"}, a different key). Always receives the already-rounded
- * {@code int} radius from the service.
+ * {@code @cacheKeyFactory} by name. Key stability never depends on callers
+ * normalizing first. Signed zero canonicalizes to {@code 0.0} so that
+ * {@code -0.0000} and {@code 0.0000} share one cache entry. Always receives
+ * the already-rounded {@code int} radius from the service.
  */
 @Component
-public class CacheKeyFactory
+public class CacheKeyFactory implements CacheKeyGenerator
 {
 
+    private static final int SCALE = 4;
+    private static final double SCALE_FACTOR = 10000.0;
+
     /**
-     * Creates the cache key for one normalized search.
+     * Creates the cache key for one normalized search using scaled long arithmetic
+     * (no {@code String.format} allocation on the hot path).
      *
      * @param latitude normalized latitude, must be finite and non-null
      * @param longitude normalized longitude, must be finite and non-null
      * @param radiusMeters already-rounded radius in whole meters
      * @return the key in {@code lat:lon:radius} form, e.g. {@code -34.6037:-58.3816:500}
      * @throws IllegalArgumentException if a coordinate is null, NaN or infinite
-      */
+     */
     public String create(Double latitude, Double longitude, int radiusMeters)
+    {
+        requireCoordinateBoxed(latitude, "latitude");
+        requireCoordinateBoxed(longitude, "longitude");
+        return create(latitude.doubleValue(), longitude.doubleValue(), radiusMeters);
+    }
+
+    public String create(double latitude, double longitude, int radiusMeters)
     {
         requireCoordinate(latitude, "latitude");
         requireCoordinate(longitude, "longitude");
-        double lat = latitude == 0.0 ? 0.0 : latitude;
-        double lon = longitude == 0.0 ? 0.0 : longitude;
-        return String.format(Locale.ROOT, "%.4f:%.4f:%.0f", lat, lon, (double) radiusMeters);
+        long latRaw = Math.round(latitude * SCALE_FACTOR);
+        long lonRaw = Math.round(longitude * SCALE_FACTOR);
+        // Canonicalize signed zero
+        if (latRaw == 0)
+        {
+            latRaw = 0;
+        }
+        if (lonRaw == 0)
+        {
+            lonRaw = 0;
+        }
+        StringBuilder sb = new StringBuilder(32);
+        sb.append(formatFixed(latRaw)).append(':')
+                .append(formatFixed(lonRaw)).append(':')
+                .append(radiusMeters);
+        return sb.toString();
     }
 
-    private void requireCoordinate(Double value, String name)
+    private String formatFixed(long scaled)
     {
-        if (value == null || !Double.isFinite(value))
+        boolean negative = scaled < 0;
+        long abs = negative ? -scaled : scaled;
+        long intPart = abs / (long) SCALE_FACTOR;
+        long frac = abs % (long) SCALE_FACTOR;
+        StringBuilder sb = new StringBuilder(16);
+        if (negative)
         {
-            throw new IllegalArgumentException("Cache key coordinate " + name + " must be finite and non-null");
+            sb.append('-');
+        }
+        sb.append(intPart).append('.');
+        // Pad fraction to exactly 4 digits (e.g. 5 -> 0005)
+        String fracStr = String.format(Locale.ROOT, "%04d", frac);
+        sb.append(fracStr);
+        return sb.toString();
+    }
+
+    private void requireCoordinateBoxed(Double value, String name)
+    {
+        if (value == null || !Double.isFinite(value.doubleValue()))
+        {
+            throw new IllegalArgumentException(
+                    "Cache key coordinate " + name + " must be finite and non-null, got " + value);
+        }
+    }
+
+    private void requireCoordinate(double value, String name)
+    {
+        if (!Double.isFinite(value))
+        {
+            throw new IllegalArgumentException(
+                    "Cache key coordinate " + name + " must be finite, got " + value);
         }
     }
 }

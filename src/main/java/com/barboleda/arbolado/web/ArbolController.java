@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.barboleda.arbolado.domain.SearchRequest;
 import com.barboleda.arbolado.domain.SearchResponse;
-import com.barboleda.arbolado.service.ArbolService;
+import com.barboleda.arbolado.service.ArbolSearchFacade;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -19,21 +19,21 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 
 /**
- * Search endpoint: thin delegation to {@link ArbolService}, JSON in and out.
+ * Search endpoint: thin delegation to {@link ArbolSearchFacade}, JSON in and out.
  */
 @Tag(name = "search", description = "Geospatial tree search over the Buenos Aires dataset")
 @RestController
 public class ArbolController
 {
 
-    private final ArbolService service;
+    private final ArbolSearchFacade service;
 
     /**
      * Builds the controller over the search facade.
      *
      * @param service the search facade
      */
-    public ArbolController(ArbolService service)
+    public ArbolController(ArbolSearchFacade service)
     {
         this.service = service;
     }

@@ -1,0 +1,55 @@
+spring:
+  application:
+    name: arbolado-backend # ECS service.name + Micrometer identity (logback <serviceName> reads this)
+  cache:
+    type: redis
+    cache-names: arboles
+    redis:
+      time-to-live: 30d # fixed; per-entry jitter dropped — lazy writes spread load (see #5)
+      cache-null-values: false
+      # no key-prefix: the default prefixes the cache name itself, so keys are arboles::<key>;
+      # setting key-prefix: arboles:: would double it to arboles::arboles::<key>
+      use-key-prefix: true
+  data:
+    mongodb:
+      uri: ${MONGO_URI} # must include the /arbolado_db path — host-only URI silently uses admin
+      auto-index-creation: false # off, belt-and-braces: app never creates indexes (read-only; ETL owns 2dsphere)
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:} # empty default so local dev without auth starts
+      connect-timeout: 2s # measured 473ms TLS-only to Upstash; 500ms timed out init (AUTH+PING on top)
+      timeout: 2s # command/read timeout; fail-open still bounds outage cost, but must clear the TLS floor
+      ssl:
+        enabled: ${REDIS_SSL:true} # true for Upstash, false for local dev
+app:
+  mongo:
+    warmup:
+      enabled: true # ping once on boot so the first user request never pays the cold TLS cost
+  redis:
+    warmup:
+      enabled: true # ping once on boot; Lettuce connects lazily and the cache stays fail-open either way
+server:
+  forward-headers-strategy: framework
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,caches,metrics,prometheus # prometheus: micrometer-registry is on the classpath
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: never # public probe with no auth configured; when-authorized would expose details
+      group:
+        readiness:
+          include: mongo,diskSpace,ping
+        liveness:
+          include: ping
+    caches:
+      enabled: true
+  health:
+    mongo:
+      enabled: true
+    redis:
+      enabled: true

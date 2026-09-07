@@ -1,0 +1,82 @@
+---
+# Pull the latest GHCR image and (re)start the docker-compose project on the VPS.
+# Image is public on GHCR, so no `docker login` is needed.
+# Secrets are written atomically to /opt/arbolado/BArboleda-backend.env (mode 0600)
+# from the workflow --extra-vars; the compose file references it via env_file:.
+#
+# Image reference and tag are pinned in this playbook; tag is always :latest.
+# Roll forward by pushing to master; rollback by reverting the merge commit.
+#
+# The compose file lives at ~/server/docker-compose.yml (hand-authored).
+# It must declare a service that pulls the image below and reads the env file.
+# Example (see PLAN; user-owned, not in this repo):
+#   services:
+#     BArboleda-back:
+#       image: ghcr.io/deadlici0us/barboleda-backend:latest
+#       env_file: /opt/arbolado/BArboleda-backend.env
+# The service is reachable inside the user-defined bridge `app-network` as
+# BArboleda-back:8080; Nginx (also in the compose stack) fronts it on the
+# public interface and on 127.0.0.1:80 for the readiness probe.
+- name: Deploy BArboleda-backend
+  hosts: vps
+  become: false
+  gather_facts: false
+  vars:
+    app_dir: /opt/arbolado
+    env_file: "{{ app_dir }}/BArboleda-backend.env"
+    compose_dir: "/home/{{ ansible_user }}/server"
+    image_repository: ghcr.io/deadlici0us/barboleda-backend
+    image_tag: latest
+    # Readiness probe targets Nginx on the VPS loopback (:80), which in turn
+    # proxies /BArboleda/actuator/* to the backend. The backend itself has no
+    # host port mapping; it is reachable only on the user-defined compose
+    # bridge `app-network` as BArboleda-back:8080.
+    app_port: 80
+    health_path: /BArboleda/actuator/health/readiness
+    health_retries: 12
+    health_delay: 5
+  tasks:
+    - name: Ensure app and compose directories exist
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        mode: "0755"
+      loop:
+        - "{{ app_dir }}"
+        - "{{ compose_dir }}"
+
+    # default(..., true) also fires on empty strings: an unset REDIS_SSL secret would
+    # otherwise render as a blank line, and Spring's ${REDIS_SSL:true} only defaults
+    # when missing, not when empty — blank would disable TLS to Upstash (handshake timeout).
+    - name: Write env file atomically with 0600
+      ansible.builtin.copy:
+        dest: "{{ env_file }}.tmp"
+        content: |
+          MONGO_URI={{ mongo_uri }}
+          REDIS_HOST={{ redis_host }}
+          REDIS_PORT={{ redis_port | default('6379', true) }}
+          REDIS_PASSWORD={{ redis_password }}
+          REDIS_SSL={{ redis_ssl | default('true', true) }}
+        mode: "0600"
+      no_log: true
+
+    - name: Promote env file
+      ansible.builtin.command: "mv {{ env_file }}.tmp {{ env_file }}"
+      changed_when: true
+
+    - name: Pull and restart docker compose services
+      community.docker.docker_compose_v2:
+        project_src: "{{ compose_dir }}"
+        state: present
+        pull: always
+        remove_orphans: true
+
+    - name: Wait for readiness
+      ansible.builtin.uri:
+        url: "http://127.0.0.1:{{ app_port }}{{ health_path }}"
+        status_code: 200
+        validate_certs: false
+      register: health
+      until: health.status == 200
+      retries: "{{ health_retries }}"
+      delay: "{{ health_delay }}"

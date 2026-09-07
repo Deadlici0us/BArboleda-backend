@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- ECS JSON logging on Boot 3.3.x (PLAN.md #0, #2); service label from spring.application.name. -->
+<configuration>
+  <property name="APP_NAME" value="${spring.application.name:-arbolado-backend}"/>
+  <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder class="co.elastic.logging.logback.EcsEncoder">
+      <serviceName>${APP_NAME}</serviceName>
+    </encoder>
+  </appender>
+  <root level="INFO">
+    <appender-ref ref="CONSOLE"/>
+  </root>
+</configuration>

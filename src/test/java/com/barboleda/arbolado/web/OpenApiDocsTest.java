@@ -63,8 +63,9 @@ class OpenApiDocsTest
                         .value("Single street tree response"))
                 .andExpect(jsonPath("$.components.schemas.SearchResponse.properties.items.description")
                         .value("Distance-sorted page, ascending"))
-                // 400 carries no response body schema (only description, no content schema reference)
+                // 400 response documented as RFC 9457 ProblemDetail
                 .andExpect(jsonPath("$.paths['/search'].post.responses.400" +
-                        ".content.application/json.schema").doesNotExist());
+                        ".content.application/json.schema.$ref")
+                        .value("#/components/schemas/ProblemDetail"));
     }
 }

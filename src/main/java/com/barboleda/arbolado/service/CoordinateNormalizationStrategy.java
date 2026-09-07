@@ -9,22 +9,28 @@ public interface CoordinateNormalizationStrategy
 {
 
     /**
-     * Normalizes one coordinate value.
+     * Normalizes one coordinate value (primitive, hot path, no autoboxing).
+     *
+     * @param value the raw coordinate, must be finite
+     * @return the grid-aligned coordinate
+     * @throws IllegalArgumentException if NaN or infinite
+     */
+    double normalize(double value);
+
+    /**
+     * Boxed overload that delegates to the primitive form.
      *
      * @param value the raw coordinate, must be finite and non-null
      * @return the grid-aligned coordinate
-     * @throws IllegalArgumentException if {@code value} is null, NaN or infinite
+     * @throws IllegalArgumentException if null, NaN or infinite
      */
-    Double normalize(Double value);
-
-    /**
-     * Primitive overload that avoids autoboxing on the hot search path.
-     *
-     * @param value the raw coordinate
-     * @return the grid-aligned coordinate
-     */
-    default double normalize(double value)
+    default Double normalize(Double value)
     {
-        return normalize(Double.valueOf(value));
+        if (value == null || !Double.isFinite(value))
+        {
+            throw new IllegalArgumentException(
+                    "Coordinate must be finite and non-null, got " + value);
+        }
+        return normalize(value.doubleValue());
     }
 }

@@ -1,7 +1,5 @@
 package com.barboleda.arbolado.service;
 
-import java.util.Locale;
-
 import org.springframework.stereotype.Component;
 
 /**
@@ -71,9 +69,23 @@ public class CacheKeyFactory implements CacheKeyGenerator
             sb.append('-');
         }
         sb.append(intPart).append('.');
-        // Pad fraction to exactly 4 digits (e.g. 5 -> 0005)
-        String fracStr = String.format(Locale.ROOT, "%04d", frac);
-        sb.append(fracStr);
+        // Pad fraction to exactly 4 digits without String.format allocation
+        if (frac < 10L)
+        {
+            sb.append("000").append(frac);
+        }
+        else if (frac < 100L)
+        {
+            sb.append("00").append(frac);
+        }
+        else if (frac < 1000L)
+        {
+            sb.append('0').append(frac);
+        }
+        else
+        {
+            sb.append(frac);
+        }
         return sb.toString();
     }
 

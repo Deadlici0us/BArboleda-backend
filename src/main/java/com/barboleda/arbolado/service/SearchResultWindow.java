@@ -2,12 +2,15 @@ package com.barboleda.arbolado.service;
 
 import java.util.List;
 
+import org.springframework.stereotype.Component;
+
 import com.barboleda.arbolado.domain.ArbolResponse;
 import com.barboleda.arbolado.domain.SearchLimits;
 
 /**
  * Slices fetched results and computes the truncation flag.
  */
+@Component
 public class SearchResultWindow
 {
 
@@ -20,7 +23,8 @@ public class SearchResultWindow
     public WindowResult window(List<ArbolResponse> fetched)
     {
         boolean truncated = fetched.size() > SearchLimits.MAX_ITEMS;
-        List<ArbolResponse> items = fetched.stream().limit(SearchLimits.MAX_ITEMS).toList();
+        List<ArbolResponse> items = truncated ? List.copyOf(fetched.subList(0, SearchLimits.MAX_ITEMS))
+                : List.copyOf(fetched);
         return new WindowResult(items, truncated);
     }
 

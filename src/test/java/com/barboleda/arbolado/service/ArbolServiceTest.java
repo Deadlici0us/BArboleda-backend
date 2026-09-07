@@ -2,8 +2,8 @@ package com.barboleda.arbolado.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyDouble;
-import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -29,7 +29,8 @@ class ArbolServiceTest
 
     private final CachedArbolSearch cachedSearch = mock(CachedArbolSearch.class);
 
-    private final ArbolService service = new ArbolService(new RoundingNormalizationStrategy(), cachedSearch);
+    private final ArbolService service = new ArbolService(new RoundingNormalizationStrategy(), cachedSearch,
+            new SearchInputValidator(), new SearchResultWindow());
 
     @Test
     @DisplayName("non-finite input on any field throws before touching the cache")
@@ -60,12 +61,12 @@ class ArbolServiceTest
         // Given fractional radii around the .5 boundary
         // When searching
         // Then the cached path always receives the rounded int, never the raw double
-        when(cachedSearch.findNearbyCached(anyDouble(), anyDouble(), anyInt())).thenReturn(List.of());
+        when(cachedSearch.findNearbyCached(anyDouble(), anyDouble(), any())).thenReturn(List.of());
         service.findNearby(new SearchRequest(-34.6037, -58.3816, 499.6));
         service.findNearby(new SearchRequest(-34.6037, -58.3816, 500.4));
         service.findNearby(new SearchRequest(-34.6037, -58.3816, 499.4));
-        verify(cachedSearch, times(2)).findNearbyCached(-34.6037, -58.3816, 500);
-        verify(cachedSearch).findNearbyCached(-34.6037, -58.3816, 499);
+        verify(cachedSearch, times(2)).findNearbyCached(-34.6037, -58.3816, new RadiusMeters(500));
+        verify(cachedSearch).findNearbyCached(-34.6037, -58.3816, new RadiusMeters(499));
     }
 
     @Test
@@ -75,11 +76,11 @@ class ArbolServiceTest
         // Given fractional radii hugging both bounds
         // When searching
         // Then the cached path receives the rounded int, never out of bounds
-        when(cachedSearch.findNearbyCached(anyDouble(), anyDouble(), anyInt())).thenReturn(List.of());
+        when(cachedSearch.findNearbyCached(anyDouble(), anyDouble(), any())).thenReturn(List.of());
         service.findNearby(new SearchRequest(-34.6037, -58.3816, 1.4));
         service.findNearby(new SearchRequest(-34.6037, -58.3816, 999.6));
-        verify(cachedSearch).findNearbyCached(-34.6037, -58.3816, 1);
-        verify(cachedSearch).findNearbyCached(-34.6037, -58.3816, 1000);
+        verify(cachedSearch).findNearbyCached(-34.6037, -58.3816, new RadiusMeters(1));
+        verify(cachedSearch).findNearbyCached(-34.6037, -58.3816, new RadiusMeters(1000));
     }
 
     @Test
@@ -87,7 +88,7 @@ class ArbolServiceTest
     void truncatedOnlyOnOverflow()
     {
         // Given a full probe page versus an exact-cap page
-        when(cachedSearch.findNearbyCached(anyDouble(), anyDouble(), anyInt())).thenReturn(probeDtos(101));
+        when(cachedSearch.findNearbyCached(anyDouble(), anyDouble(), any())).thenReturn(probeDtos(101));
 
         // When searching with overflow
         SearchResponse overflow = service.findNearby(new SearchRequest(-34.6037, -58.3816, 1000.0));
@@ -98,7 +99,7 @@ class ArbolServiceTest
         assertThat(overflow.truncated()).isTrue();
 
         // When searching with exactly MAX_ITEMS matches
-        when(cachedSearch.findNearbyCached(anyDouble(), anyDouble(), anyInt())).thenReturn(probeDtos(100));
+        when(cachedSearch.findNearbyCached(anyDouble(), anyDouble(), any())).thenReturn(probeDtos(100));
         SearchResponse exact = service.findNearby(new SearchRequest(-34.6037, -58.3816, 1000.0));
 
         // Then nothing is truncated
@@ -112,7 +113,7 @@ class ArbolServiceTest
     void emptyResultWraps()
     {
         // Given no matches
-        when(cachedSearch.findNearbyCached(anyDouble(), anyDouble(), anyInt())).thenReturn(List.of());
+        when(cachedSearch.findNearbyCached(anyDouble(), anyDouble(), any())).thenReturn(List.of());
 
         // When searching
         SearchResponse response = service.findNearby(new SearchRequest(-34.6037, -58.3816, 500.0));

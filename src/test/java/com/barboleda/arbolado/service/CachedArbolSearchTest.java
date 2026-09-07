@@ -38,7 +38,7 @@ class CachedArbolSearchTest
         when(mapper.toResponse(entity)).thenReturn(dto);
 
         // When searching the cached path
-        List<ArbolResponse> found = cached.findNearbyCached(-34.6037, -58.3816, 500);
+        List<ArbolResponse> found = cached.findNearbyCached(-34.6037, -58.3816, new RadiusMeters(500));
 
         // Then the port saw Point(lon, lat) with 0.5 km and the DTO came back
         org.mockito.Mockito.verify(port).searchNear(any(GeoCenter.class), any(RadiusMeters.class));
@@ -56,7 +56,7 @@ class CachedArbolSearchTest
         when(mapper.toResponse(any(Arbol.class))).thenAnswer(call -> dtoFor((Arbol) call.getArgument(0)));
 
         // When searching
-        List<ArbolResponse> found = cached.findNearbyCached(0.0, 0.0, 1000);
+        List<ArbolResponse> found = cached.findNearbyCached(0.0, 0.0, new RadiusMeters(1000));
 
         // Then all 101 DTOs return — slicing is the service's job
         assertThat(found).hasSize(SearchLimits.MAX_ITEMS + 1);
@@ -71,7 +71,7 @@ class CachedArbolSearchTest
 
         // When searching
         // Then the result is empty
-        assertThat(cached.findNearbyCached(0.0, 0.0, 500)).isEmpty();
+        assertThat(cached.findNearbyCached(0.0, 0.0, new RadiusMeters(500))).isEmpty();
     }
 
     private ArbolResponse dtoFor(Arbol entity)

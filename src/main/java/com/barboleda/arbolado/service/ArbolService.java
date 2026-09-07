@@ -28,13 +28,16 @@ public class ArbolService implements ArbolSearchFacade
      *
      * @param normalizer the coordinate grid strategy
      * @param cachedSearch the cache-owning search bean
+     * @param validator the input validation guard
+     * @param window the result slicer
      */
-    public ArbolService(CoordinateNormalizationStrategy normalizer, CachedArbolSearch cachedSearch)
+    public ArbolService(CoordinateNormalizationStrategy normalizer, CachedArbolSearch cachedSearch,
+            SearchInputValidator validator, SearchResultWindow window)
     {
         this.normalizer = normalizer;
         this.cachedSearch = cachedSearch;
-        this.validator = new SearchInputValidator();
-        this.window = new SearchResultWindow();
+        this.validator = validator;
+        this.window = window;
     }
 
     /**
@@ -55,9 +58,9 @@ public class ArbolService implements ArbolSearchFacade
         double latitude = normalizer.normalize(request.latitude());
         double longitude = normalizer.normalize(request.longitude());
         int radiusMeters = (int) Math.round(request.radius());
-        new RadiusMeters(radiusMeters); // validates 1..1000
+        RadiusMeters radius = new RadiusMeters(radiusMeters); // validates 1..1000 once, reused below
 
-        List<ArbolResponse> fetched = cachedSearch.findNearbyCached(latitude, longitude, radiusMeters);
+        List<ArbolResponse> fetched = cachedSearch.findNearbyCached(latitude, longitude, radius);
         SearchResultWindow.WindowResult result = window.window(fetched);
         return new SearchResponse(result.items(), result.items().size(), result.truncated(),
                 latitude, longitude, radiusMeters);

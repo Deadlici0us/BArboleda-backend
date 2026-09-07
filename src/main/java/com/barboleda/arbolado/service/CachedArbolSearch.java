@@ -41,15 +41,14 @@ public class CachedArbolSearch
      *
      * @param latitude normalized latitude
      * @param longitude normalized longitude
-     * @param radiusMeters already-rounded radius in whole meters
+     * @param radius already-rounded radius in whole meters
      * @return mapped DTOs in ascending distance order, up to {@code MAX_ITEMS + 1}
      */
     @Cacheable(value = SearchLimits.CACHE_NAME, cacheResolver = "failOpenCacheResolver",
             keyGenerator = "cacheKeyGenerator", sync = true)
-    public List<ArbolResponse> findNearbyCached(double latitude, double longitude, int radiusMeters)
+    public List<ArbolResponse> findNearbyCached(double latitude, double longitude, RadiusMeters radius)
     {
         GeoCenter center = new GeoCenter(longitude, latitude);
-        RadiusMeters radius = new RadiusMeters(radiusMeters);
         return searchPort.searchNear(center, radius).stream().map(mapper::toResponse).toList();
     }
 }

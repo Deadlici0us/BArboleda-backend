@@ -1,10 +1,13 @@
 package com.barboleda.arbolado.service;
 
+import org.springframework.stereotype.Component;
+
 import com.barboleda.arbolado.exception.InvalidSearchRequestException;
 
 /**
  * Service-level guard: validates search inputs are finite before normalization.
  */
+@Component
 public class SearchInputValidator
 {
 

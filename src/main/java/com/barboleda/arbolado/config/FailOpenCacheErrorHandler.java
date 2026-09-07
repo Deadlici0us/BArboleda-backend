@@ -5,6 +5,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.cache.Cache;
 import org.springframework.cache.interceptor.CacheErrorHandler;
 
+import java.util.concurrent.ConcurrentHashMap;
+
+import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 
 /**
@@ -18,6 +21,8 @@ public class FailOpenCacheErrorHandler implements CacheErrorHandler
     private static final Logger log = LoggerFactory.getLogger(FailOpenCacheErrorHandler.class);
 
     private final MeterRegistry registry;
+
+    private final ConcurrentHashMap<String, Counter> counters = new ConcurrentHashMap<>();
 
     public FailOpenCacheErrorHandler(MeterRegistry registry)
     {
@@ -50,7 +55,10 @@ public class FailOpenCacheErrorHandler implements CacheErrorHandler
 
     private void recordFailure(String operation, Cache cache, RuntimeException failure)
     {
-        registry.counter("cache.errors", "operation", operation, "cache", cache.getName()).increment();
+        String key = operation + "|" + cache.getName();
+        Counter counter = counters.computeIfAbsent(key, k -> registry.counter("cache.errors",
+                "operation", operation, "cache", cache.getName()));
+        counter.increment();
         log.warn("Cache {} failed on {} ({}); failing open", cache.getName(), operation, failure.toString());
     }
 }

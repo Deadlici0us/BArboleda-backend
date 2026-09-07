@@ -13,11 +13,11 @@ import org.springframework.stereotype.Component;
 public class CacheKeyGeneratorAdapter implements KeyGenerator
 {
 
-    private final CacheKeyFactory keyFactory;
+    private final CacheKeyGenerator keyGenerator;
 
-    public CacheKeyGeneratorAdapter(CacheKeyFactory keyFactory)
+    public CacheKeyGeneratorAdapter(CacheKeyGenerator keyGenerator)
     {
-        this.keyFactory = keyFactory;
+        this.keyGenerator = keyGenerator;
     }
 
     @Override
@@ -29,10 +29,13 @@ public class CacheKeyGeneratorAdapter implements KeyGenerator
                     "CacheKeyGeneratorAdapter expects (latitude, longitude, radiusMeters), got "
                             + params.length);
         }
-        double latitude = (Double) params[0];
-        double longitude = (Double) params[1];
-        int radiusMeters = (Integer) params[2];
-        return keyFactory.create(latitude, longitude, radiusMeters);
+        double latitude = (params[0] instanceof Number)
+                ? ((Number) params[0]).doubleValue() : Double.parseDouble(String.valueOf(params[0]));
+        double longitude = (params[1] instanceof Number)
+                ? ((Number) params[1]).doubleValue() : Double.parseDouble(String.valueOf(params[1]));
+        int radiusMeters = (params[2] instanceof RadiusMeters) ? ((RadiusMeters) params[2]).value()
+                : ((Number) params[2]).intValue();
+        return keyGenerator.create(latitude, longitude, radiusMeters);
     }
 
     @Override

@@ -112,9 +112,22 @@ class CacheProxyTest
     static class ProxyConfig
     {
         @Bean
-        ArbolService arbolService(CoordinateNormalizationStrategy normalizer, CachedArbolSearch cachedSearch)
+        ArbolService arbolService(CoordinateNormalizationStrategy normalizer, CachedArbolSearch cachedSearch,
+                SearchInputValidator validator, SearchResultWindow window)
         {
-            return new ArbolService(normalizer, cachedSearch);
+            return new ArbolService(normalizer, cachedSearch, validator, window);
+        }
+
+        @Bean
+        SearchInputValidator inputValidator()
+        {
+            return new SearchInputValidator();
+        }
+
+        @Bean
+        SearchResultWindow resultWindow()
+        {
+            return new SearchResultWindow();
         }
 
         @Bean

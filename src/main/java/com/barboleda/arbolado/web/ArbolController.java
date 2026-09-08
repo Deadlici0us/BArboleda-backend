@@ -47,15 +47,14 @@ public class ArbolController
      */
     @Operation(summary = "Search trees near a center point (fixed 1000m bucket)",
             description = "Fixed 1000m bucket (1080m padded Mongo query, 1000 item cap). "
-                    + "Deprecated optional radius ignored; client filters exact distance locally. "
                     + "Full-precision tree GPS in response; use Haversine + clustering. "
                     + "HTTP GZIP applied with Accept-Encoding: gzip.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Fixed 1000m bucket wrapper, "
-                    + "distance-sorted, possibly truncated (client filters exact radius)",
+                    + "distance-sorted, possibly truncated",
                     content = @Content(schema = @Schema(implementation = SearchResponse.class))),
-            @ApiResponse(responseCode = "400", description = "Invalid coordinates (radius optional, "
-                    + "deprecated; out-of-range rejected by validation)",
+            @ApiResponse(responseCode = "400", description = "Invalid coordinates; "
+                    + "out-of-range rejected by validation",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                             schema = @Schema(implementation = ProblemDetail.class))),
             @ApiResponse(responseCode = "503", description = "MongoDB unavailable",

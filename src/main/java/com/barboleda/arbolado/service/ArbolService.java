@@ -11,7 +11,7 @@ import com.barboleda.arbolado.domain.SearchResponse;
 
 /**
  * Search facade: guards, normalizes, delegates to the fixed 1000m cached path,
- * slices and wraps. Client-provided radius is optional/deprecated; backend ignores it.
+ * slices and wraps.
  */
 @Component
 public class ArbolService implements ArbolSearchFacade
@@ -43,9 +43,9 @@ public class ArbolService implements ArbolSearchFacade
     }
 
     /**
-     * Runs one geospatial search end to end. Fixed 1000m bucket; client radius ignored.
+     * Runs one geospatial search end to end. Fixed 1000m bucket.
      *
-     * @param request the validated request; radius is optional and deprecated
+     * @param request the validated request
      * @return the sliced, wrapped response with normalized inputs echoed back
      * @throws com.barboleda.arbolado.exception.InvalidSearchRequestException
      *         on non-finite latitude or longitude
@@ -55,12 +55,6 @@ public class ArbolService implements ArbolSearchFacade
     {
         validator.requireFinite(request.latitude(), "latitude");
         validator.requireFinite(request.longitude(), "longitude");
-
-        // Radius is optional/deprecated; backend always uses fixed 1000m bucket.
-        if (request.radius() != null)
-        {
-            validator.requireFinite(request.radius(), "radius");
-        }
 
         double latitude = normalizer.normalize(request.latitude());
         double longitude = normalizer.normalize(request.longitude());

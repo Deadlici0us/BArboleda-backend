@@ -58,7 +58,7 @@ class CacheProxyTest
         Arbol entity = new Arbol("x", null, 1, "Eucalyptus", 10, 40, 1, -58.3816, -34.6037, "csv", false);
         when(port.searchNear(any(GeoCenter.class), any(RadiusMeters.class))).thenReturn(List.of(entity));
 
-        SearchRequest request = new SearchRequest(-34.6037, -58.3816, 500.0);
+        SearchRequest request = new SearchRequest(-34.6037, -58.3816);
         SearchResponse first = service.findNearby(request);
         SearchResponse second = service.findNearby(request);
 
@@ -84,7 +84,7 @@ class CacheProxyTest
         {
             CountDownLatch ready = new CountDownLatch(threads);
             CountDownLatch start = new CountDownLatch(1);
-            SearchRequest request = new SearchRequest(-34.7000, -58.5000, 250.0);
+            SearchRequest request = new SearchRequest(-34.7000, -58.5000);
             List<Future<SearchResponse>> futures = IntStream.range(0, threads).mapToObj(i -> pool.submit(() ->
             {
                 ready.countDown();

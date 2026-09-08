@@ -53,7 +53,7 @@ class ArbolControllerTest
         // Then the wrapper shape returns with the correlation header echoed
         mockMvc.perform(post("/search").contentType(MediaType.APPLICATION_JSON)
                 .header("X-Request-Id", "req-1")
-                .content("{\"latitude\":-34.6037,\"longitude\":-58.3816,\"radius\":500}"))
+                .content("{\"latitude\":-34.6037,\"longitude\":-58.3816}"))
                 .andExpect(status().isOk())
                 .andExpect(header().string("X-Request-Id", "req-1"))
                 .andExpect(jsonPath("$.items[0].nro_registro").value(123))
@@ -63,24 +63,24 @@ class ArbolControllerTest
     }
 
     @Test
-    @DisplayName("out-of-range, zero, missing and malformed bodies return 400")
+    @DisplayName("out-of-range, missing and malformed bodies return 400")
     void badRequests() throws Exception
     {
         // Given invalid payloads
         // When posting
         // Then each maps to 400
         mockMvc.perform(post("/search").contentType(MediaType.APPLICATION_JSON)
-                .content("{\"latitude\":-34.6037,\"longitude\":-58.3816,\"radius\":-5}"))
+                .content("{\"latitude\":-91.0,\"longitude\":-58.3816}"))
                 .andExpect(status().isBadRequest());
         mockMvc.perform(post("/search").contentType(MediaType.APPLICATION_JSON)
-                .content("{\"latitude\":-34.6037,\"longitude\":-58.3816,\"radius\":0}"))
+                .content("{\"latitude\":-34.6037,\"longitude\":-181.0}"))
                 .andExpect(status().isBadRequest());
         mockMvc.perform(post("/search").contentType(MediaType.APPLICATION_JSON).content("{}"))
                 .andExpect(status().isBadRequest());
         mockMvc.perform(post("/search").contentType(MediaType.APPLICATION_JSON).content("{oops"))
                 .andExpect(status().isBadRequest());
         mockMvc.perform(post("/search").contentType(MediaType.APPLICATION_JSON)
-                .content("{\"latitude\":NaN,\"longitude\":-58.3816,\"radius\":500}"))
+                .content("{\"latitude\":NaN,\"longitude\":-58.3816}"))
                 .andExpect(status().isBadRequest());
     }
 
@@ -114,7 +114,7 @@ class ArbolControllerTest
         when(service.findNearby(any(SearchRequest.class)))
                 .thenReturn(new SearchResponse(List.of(dto), 1, false, -34.604, -58.382, 1000));
 
-        // When posting without the header (optional radius omitted)
+        // When posting without the header
         MvcResult result = mockMvc.perform(post("/search").contentType(MediaType.APPLICATION_JSON)
                 .content("{\"latitude\":-34.6037,\"longitude\":-58.3816}"))
                 .andExpect(status().isOk())
@@ -122,19 +122,6 @@ class ArbolControllerTest
 
         // Then a valid UUID echoes on the response
         assertThat(UUID.fromString(result.getResponse().getHeader("X-Request-Id"))).isNotNull();
-    }
-
-    @Test
-    @DisplayName("optional radius omitted returns 200 with fixed 1000m bucket")
-    void optionalRadiusOmitted() throws Exception
-    {
-        ArbolResponse dto = new ArbolResponse(123, "E", 10, 30, 1, -58.3816, -34.6037);
-        when(service.findNearby(any(SearchRequest.class)))
-                .thenReturn(new SearchResponse(List.of(dto), 1, false, -34.604, -58.382, 1000));
-        mockMvc.perform(post("/search").contentType(MediaType.APPLICATION_JSON)
-                .content("{\"latitude\":-34.6037,\"longitude\":-58.3816}"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.radiusMeters").value(1000));
     }
 
     @Test
@@ -160,7 +147,7 @@ class ArbolControllerTest
         // When posting a valid search
         // Then the outage surfaces as 503, never 500
         mockMvc.perform(post("/search").contentType(MediaType.APPLICATION_JSON)
-                .content("{\"latitude\":-34.6037,\"longitude\":-58.3816,\"radius\":500}"))
+                .content("{\"latitude\":-34.6037,\"longitude\":-58.3816}"))
                 .andExpect(status().isServiceUnavailable());
     }
 }

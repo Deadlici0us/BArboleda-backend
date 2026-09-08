@@ -35,17 +35,6 @@ class SearchLimitsTest
     }
 
     @Test
-    @DisplayName("radius numeric and String bounds stay in sync")
-    void radiusBoundsStayInSync()
-    {
-        // Given the dual int + String forms required by Bean Validation annotations
-        // When parsing the String forms
-        // Then they equal the numeric forms
-        assertThat(Integer.parseInt(SearchLimits.MIN_RADIUS_STR)).isEqualTo(SearchLimits.MIN_RADIUS_METERS);
-        assertThat(Integer.parseInt(SearchLimits.MAX_RADIUS_STR)).isEqualTo(SearchLimits.MAX_RADIUS_METERS);
-    }
-
-    @Test
     @DisplayName("result cap and cache name stay locked")
     void capsStayLocked()
     {

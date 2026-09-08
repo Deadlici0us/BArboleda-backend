@@ -17,7 +17,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
  * @param truncated true when the probe detected more than {@code MAX_ITEMS} matches
  * @param normalizedLatitude grid-aligned request latitude
  * @param normalizedLongitude grid-aligned request longitude
- * @param radiusMeters always 1000 (fixed bucket; ignores deprecated request radius)
+ * @param radiusMeters always 1000 (fixed bucket)
  */
 public record SearchResponse(
         @ArraySchema(arraySchema = @Schema(description = "Distance-sorted page, ascending"),
@@ -26,6 +26,6 @@ public record SearchResponse(
         @Schema(description = "True when more than MAX_ITEMS matched") boolean truncated,
         @Schema(description = "Grid-aligned request latitude") double normalizedLatitude,
         @Schema(description = "Grid-aligned request longitude") double normalizedLongitude,
-        @Schema(description = "Always 1000 (fixed bucket; client filters exact distance)") int radiusMeters)
+        @Schema(description = "Always 1000 (fixed bucket)") int radiusMeters)
 {
 }

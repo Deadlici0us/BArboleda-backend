@@ -39,9 +39,9 @@ class GlobalExceptionHandlerTest
     void validationIs400() throws Exception
     {
         // Given a bound field error like the one @Valid raises
-        BindingResult binding = new BeanPropertyBindingResult(new SearchRequest(0.0, 0.0, 0.0), "searchRequest");
-        binding.addError(new FieldError("searchRequest", "radius", 0.0, false, null, null,
-                "must be greater than or equal to 1"));
+        BindingResult binding = new BeanPropertyBindingResult(new SearchRequest(0.0, 0.0), "searchRequest");
+        binding.addError(new FieldError("searchRequest", "latitude", 0.0, false, null, null,
+                "must be less than or equal to 90"));
         Method search = BeanUtils.findMethod(ArbolController.class, "search", SearchRequest.class);
         MethodArgumentNotValidException failure = new MethodArgumentNotValidException(
                 new org.springframework.core.MethodParameter(search, 0), binding);
@@ -87,7 +87,7 @@ class GlobalExceptionHandlerTest
         // When handling
         // Then the status is 400 with the reason preserved
         ResponseEntity<ProblemDetail> response = handler
-                .handleInvalidSearch(new InvalidSearchRequestException("Search radius must be finite, got NaN"));
+                .handleInvalidSearch(new InvalidSearchRequestException("Search latitude must be finite, got NaN"));
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
         assertThat(response.getBody().getDetail()).contains("must be finite");
     }

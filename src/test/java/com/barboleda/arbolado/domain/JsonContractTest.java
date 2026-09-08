@@ -20,13 +20,13 @@ class JsonContractTest
     void requestIsCamelCase() throws Exception
     {
         // Given a request
-        SearchRequest request = new SearchRequest(-34.6037, -58.3816, 500.0);
+        SearchRequest request = new SearchRequest(-34.6037, -58.3816);
 
         // When serializing
         String json = objectMapper.writeValueAsString(request);
 
         // Then the locked camelCase payload results
-        assertThat(json).isEqualTo("{\"latitude\":-34.6037,\"longitude\":-58.3816,\"radius\":500.0}");
+        assertThat(json).isEqualTo("{\"latitude\":-34.6037,\"longitude\":-58.3816}");
     }
 
     @Test

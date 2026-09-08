@@ -14,7 +14,7 @@ public interface ArbolSearchPort
      * Finds trees near a center point, raw and unsliced.
      *
      * @param center normalized search center in lon-first order
-     * @param radius rounded radius in whole meters
+     * @param radius fixed bucket radius
      * @return matching trees in ascending distance order, up to the caller's probe size
      */
     List<Arbol> searchNear(GeoCenter center, RadiusMeters radius);

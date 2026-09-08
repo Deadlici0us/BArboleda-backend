@@ -41,19 +41,13 @@ public final class SearchLimits
     /** Minimum search radius in whole meters. */
     public static final int MIN_RADIUS_METERS = 1;
 
-    /** Minimum search radius as an annotation value. */
-    public static final String MIN_RADIUS_STR = "1";
-
     /** Maximum search radius in whole meters. */
     public static final int MAX_RADIUS_METERS = 1000;
-
-    /** Maximum search radius as an annotation value. */
-    public static final String MAX_RADIUS_STR = "1000";
 
     /** Maximum items returned per search before truncation. */
     public static final int MAX_ITEMS = 1000;
 
-    /** Fixed bucket radius returned to clients (ignored in requests). */
+    /** Fixed bucket radius returned to clients. */
     public static final int FIXED_RADIUS_METERS = 1000;
 
     /** Mongo query radius with padding: 1000m + ~78m half-diagonal snap shift. */

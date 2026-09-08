@@ -18,8 +18,7 @@ import com.barboleda.arbolado.domain.SearchLimits;
  * Mongo adapter behind {@link ArbolSearchPort}: the only path that touches geo queries.
  *
  * <p>The adapter always queries the fixed 1080m padded radius (1000m + snap-shift cover).
- * Client-side filtering to exact user radius stays with the frontend. Limit is
- * {@code MAX_ITEMS + 1} (1001) for overflow detection.
+ * Limit is {@code MAX_ITEMS + 1} (1001) for overflow detection.
  * All Spring Data geo types stay inside this adapter — the service layer never sees them.
  */
 @Component
@@ -42,7 +41,7 @@ public class MongoArbolSearchAdapter implements ArbolSearchPort
     public List<Arbol> searchNear(GeoCenter center, RadiusMeters radius)
     {
         // Fixed 1000m bucket with ~78m half-diagonal padding covers true 1000m circle
-        // despite 3-decimal snap shift. Client filters exact distance locally.
+        // despite 3-decimal snap shift.
         Point point = new Point(center.longitude(), center.latitude());
         Distance maxDistance = new Distance(
                 SearchLimits.MONGO_QUERY_RADIUS_METERS / 1000.0, Metrics.KILOMETERS);

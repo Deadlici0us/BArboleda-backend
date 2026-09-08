@@ -22,7 +22,7 @@ import com.barboleda.arbolado.domain.SearchResponse;
 import com.barboleda.arbolado.exception.InvalidSearchRequestException;
 
 /**
- * Facade contract with mocked cached search (fixed 1000m bucket, optional radius).
+ * Facade contract with mocked cached search (fixed 1000m bucket).
  */
 class ArbolServiceTest
 {
@@ -33,18 +33,18 @@ class ArbolServiceTest
             new SearchInputValidator(), new SearchResultWindow());
 
     @Test
-    @DisplayName("non-finite latitude or longitude throws before touching cache; null radius allowed")
+    @DisplayName("non-finite latitude or longitude throws before touching cache")
     void finiteGuardRejects()
     {
-        assertThatThrownBy(() -> service.findNearby(new SearchRequest(Double.NaN, -58.3816, 500.0)))
+        assertThatThrownBy(() -> service.findNearby(new SearchRequest(Double.NaN, -58.3816)))
                 .isInstanceOf(InvalidSearchRequestException.class);
-        assertThatThrownBy(() -> service.findNearby(new SearchRequest(-34.6037, Double.NaN, 500.0)))
-                .isInstanceOf(InvalidSearchRequestException.class);
-        assertThatThrownBy(
-                () -> service.findNearby(new SearchRequest(Double.POSITIVE_INFINITY, -58.3816, 500.0)))
+        assertThatThrownBy(() -> service.findNearby(new SearchRequest(-34.6037, Double.NaN)))
                 .isInstanceOf(InvalidSearchRequestException.class);
         assertThatThrownBy(
-                () -> service.findNearby(new SearchRequest(-34.6037, Double.NEGATIVE_INFINITY, 500.0)))
+                () -> service.findNearby(new SearchRequest(Double.POSITIVE_INFINITY, -58.3816)))
+                .isInstanceOf(InvalidSearchRequestException.class);
+        assertThatThrownBy(
+                () -> service.findNearby(new SearchRequest(-34.6037, Double.NEGATIVE_INFINITY)))
                 .isInstanceOf(InvalidSearchRequestException.class);
 
         // Non-finite inputs must never touch the cached search
@@ -52,26 +52,14 @@ class ArbolServiceTest
     }
 
     @Test
-    @DisplayName("non-null non-finite radius throws before touching cache")
-    void nonFiniteRadiusThrowsWhenPresent()
-    {
-        assertThatThrownBy(() -> service.findNearby(
-                new SearchRequest(-34.6037, -58.3816, Double.NaN)))
-                .isInstanceOf(InvalidSearchRequestException.class);
-        // Non-finite radius must not reach the cached search when present
-        org.mockito.Mockito.verifyNoInteractions(cachedSearch);
-    }
-
-    @Test
-    @DisplayName("radius is ignored: backend always passes fixed 1000m bucket to adapter")
-    void radiusIgnoredFixedBucket()
+    @DisplayName("backend always passes fixed 1000m bucket to adapter")
+    void fixedBucket()
     {
         when(cachedSearch.findNearbyCached(anyDouble(), anyDouble(), any())).thenReturn(List.of());
-        service.findNearby(new SearchRequest(-34.6037, -58.3816, 499.6));
-        service.findNearby(new SearchRequest(-34.6037, -58.3816, 500.4));
-        service.findNearby(new SearchRequest(-34.6037, -58.3816, null));
+        service.findNearby(new SearchRequest(-34.6037, -58.3816));
+        service.findNearby(new SearchRequest(-34.6037, -58.3816));
         // All calls receive the fixed 1000m bucket
-        verify(cachedSearch, times(3)).findNearbyCached(
+        verify(cachedSearch, times(2)).findNearbyCached(
                 anyDouble(), anyDouble(), org.mockito.ArgumentMatchers.argThat(
                         r -> ((RadiusMeters) r).value() == SearchLimits.FIXED_RADIUS_METERS));
     }
@@ -81,14 +69,14 @@ class ArbolServiceTest
     void truncatedOnlyOnOverflow()
     {
         when(cachedSearch.findNearbyCached(anyDouble(), anyDouble(), any())).thenReturn(probeDtos(1001));
-        SearchResponse overflow = service.findNearby(new SearchRequest(-34.6037, -58.3816, null));
+        SearchResponse overflow = service.findNearby(new SearchRequest(-34.6037, -58.3816));
         assertThat(overflow.items()).hasSize(SearchLimits.MAX_ITEMS);
         assertThat(overflow.total()).isEqualTo(SearchLimits.MAX_ITEMS);
         assertThat(overflow.truncated()).isTrue();
         assertThat(overflow.radiusMeters()).isEqualTo(SearchLimits.FIXED_RADIUS_METERS);
 
         when(cachedSearch.findNearbyCached(anyDouble(), anyDouble(), any())).thenReturn(probeDtos(1000));
-        SearchResponse exact = service.findNearby(new SearchRequest(-34.6037, -58.3816, 80.0));
+        SearchResponse exact = service.findNearby(new SearchRequest(-34.6037, -58.3816));
         assertThat(exact.items()).hasSize(SearchLimits.MAX_ITEMS);
         assertThat(exact.total()).isEqualTo(SearchLimits.MAX_ITEMS);
         assertThat(exact.truncated()).isFalse();
@@ -96,11 +84,11 @@ class ArbolServiceTest
     }
 
     @Test
-    @DisplayName("empty result wraps to 200 with fixed radius 1000")
+    @DisplayName("empty result wraps to 200 with fixed 1000m bucket")
     void emptyResultWraps()
     {
         when(cachedSearch.findNearbyCached(anyDouble(), anyDouble(), any())).thenReturn(List.of());
-        SearchResponse response = service.findNearby(new SearchRequest(-34.6037, -58.3816, null));
+        SearchResponse response = service.findNearby(new SearchRequest(-34.6037, -58.3816));
         assertThat(response.items()).isEmpty();
         assertThat(response.total()).isZero();
         assertThat(response.truncated()).isFalse();

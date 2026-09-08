@@ -51,7 +51,7 @@ class SearchRequestValidationTest
     void validRequestPasses()
     {
         // Given a well-formed request
-        SearchRequest request = new SearchRequest(-34.6037, -58.3816, 500.0);
+        SearchRequest request = new SearchRequest(-34.6037, -58.3816);
 
         // When validating
         Set<ConstraintViolation<SearchRequest>> violations = validator.validate(request);
@@ -61,62 +61,14 @@ class SearchRequestValidationTest
     }
 
     @Test
-    @DisplayName("null coordinates and radius are rejected")
+    @DisplayName("null coordinates are rejected")
     void nullFieldsRejected()
     {
         // Given requests with each field nulled
         // When validating
         // Then every one reports a violation
-        assertThat(validator.validate(new SearchRequest(null, -58.3816, 500.0))).isNotEmpty();
-        assertThat(validator.validate(new SearchRequest(-34.6037, null, 500.0))).isNotEmpty();
-        assertThat(validator.validate(new SearchRequest(-34.6037, -58.3816, null))).isEmpty(); // optional
-    }
-
-    @Test
-    @DisplayName("zero and negative radius are rejected by the 1m floor")
-    void zeroAndNegativeRadiusRejected()
-    {
-        // Given requests below the 1m floor
-        // When validating
-        // Then both are rejected
-        assertThat(validator.validate(new SearchRequest(-34.6037, -58.3816, 0.0))).isNotEmpty();
-        assertThat(validator.validate(new SearchRequest(-34.6037, -58.3816, -5.0))).isNotEmpty();
-    }
-
-    @Test
-    @DisplayName("radius 1000 passes but 1000.01 fails")
-    void radiusUpperEdge()
-    {
-        // Given requests at and just above the 1000m ceiling
-        // When validating
-        // Then the ceiling value passes and anything above fails
-        assertThat(validator.validate(new SearchRequest(-34.6037, -58.3816, 1000.0))).isEmpty();
-        assertThat(validator.validate(new SearchRequest(-34.6037, -58.3816, 1000.01))).isNotEmpty();
-    }
-
-    @Test
-    @DisplayName("fractional radius below 1 or above 1000 is rejected before rounding")
-    void fractionalRadiusBoundaries()
-    {
-        // Given fractional radii just outside the bounds
-        // When validating
-        // Then both are rejected instead of rounding into range
-        assertThat(validator.validate(new SearchRequest(-34.6037, -58.3816, 0.5))).isNotEmpty();
-        assertThat(validator.validate(new SearchRequest(-34.6037, -58.3816, 1000.5))).isNotEmpty();
-    }
-
-    @Test
-    @DisplayName("fractional radius passes validation; rounding is the service's job")
-    void fractionalRadiusPassesValidation()
-    {
-        // Given a fractional radius inside the bounds
-        SearchRequest request = new SearchRequest(-34.6037, -58.3816, 499.6);
-
-        // When validating
-        Set<ConstraintViolation<SearchRequest>> violations = validator.validate(request);
-
-        // Then it passes — ArbolService rounds to whole meters afterwards
-        assertThat(violations).isEmpty();
+        assertThat(validator.validate(new SearchRequest(null, -58.3816))).isNotEmpty();
+        assertThat(validator.validate(new SearchRequest(-34.6037, null))).isNotEmpty();
     }
 
     @Test
@@ -126,10 +78,10 @@ class SearchRequestValidationTest
         // Given requests on and beyond the latitude bounds
         // When validating
         // Then the edges pass and out-of-range values fail
-        assertThat(validator.validate(new SearchRequest(90.0, -58.3816, 500.0))).isEmpty();
-        assertThat(validator.validate(new SearchRequest(-90.0, -58.3816, 500.0))).isEmpty();
-        assertThat(validator.validate(new SearchRequest(90.0001, -58.3816, 500.0))).isNotEmpty();
-        assertThat(validator.validate(new SearchRequest(-90.0001, -58.3816, 500.0))).isNotEmpty();
+        assertThat(validator.validate(new SearchRequest(90.0, -58.3816))).isEmpty();
+        assertThat(validator.validate(new SearchRequest(-90.0, -58.3816))).isEmpty();
+        assertThat(validator.validate(new SearchRequest(90.0001, -58.3816))).isNotEmpty();
+        assertThat(validator.validate(new SearchRequest(-90.0001, -58.3816))).isNotEmpty();
     }
 
     @Test
@@ -139,9 +91,9 @@ class SearchRequestValidationTest
         // Given requests on and beyond the longitude bounds
         // When validating
         // Then the edges pass and out-of-range values fail
-        assertThat(validator.validate(new SearchRequest(-34.6037, 180.0, 500.0))).isEmpty();
-        assertThat(validator.validate(new SearchRequest(-34.6037, -180.0, 500.0))).isEmpty();
-        assertThat(validator.validate(new SearchRequest(-34.6037, 180.0001, 500.0))).isNotEmpty();
-        assertThat(validator.validate(new SearchRequest(-34.6037, -180.0001, 500.0))).isNotEmpty();
+        assertThat(validator.validate(new SearchRequest(-34.6037, 180.0))).isEmpty();
+        assertThat(validator.validate(new SearchRequest(-34.6037, -180.0))).isEmpty();
+        assertThat(validator.validate(new SearchRequest(-34.6037, 180.0001))).isNotEmpty();
+        assertThat(validator.validate(new SearchRequest(-34.6037, -180.0001))).isNotEmpty();
     }
 }

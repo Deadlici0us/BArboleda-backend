@@ -63,13 +63,13 @@ class GeoSpatialIT
     }
 
     @Test
-    @DisplayName("fixed 1080m padded query ignores passed radius (fixed bucket)")
+    @DisplayName("fixed 1080m padded query (fixed bucket)")
     void metersAtOneMeterScale()
     {
         // Given a tree 2m north; adapter always queries 1080m
         insertTree("close", 0.0, metersToDegrees(2.0));
 
-        // When searching with any radius argument
+        // When searching
         // Then adapter returns the same fixed-bucket result regardless
         assertThat(adapter.searchNear(new GeoCenter(0.0, 0.0), new RadiusMeters(1)))
                 .extracting(Arbol::getId).containsExactly("close");
@@ -86,7 +86,7 @@ class GeoSpatialIT
         // Given a tree 991m north; adapter always queries 1080m (padded)
         insertTree("edge", 0.0, metersToDegrees(991.0));
 
-        // When searching any radius argument
+        // When searching
         // Then fixed bucket finds the tree (within 1080m, well inside 1000m true circle + padding)
         assertThat(adapter.searchNear(new GeoCenter(0.0, 0.0), new RadiusMeters(990)))
                 .extracting(Arbol::getId).containsExactly("edge");

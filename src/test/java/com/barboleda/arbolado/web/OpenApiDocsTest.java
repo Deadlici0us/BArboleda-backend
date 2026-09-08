@@ -39,19 +39,18 @@ class OpenApiDocsTest
     private GridFsTemplate gridFsTemplate;
 
     @Test
-    @DisplayName("api-docs exposes POST /search with fixed-bucket contract, deprecated radius, GZIP, 503")
+    @DisplayName("api-docs exposes POST /search with fixed-bucket contract, GZIP, 503")
     void searchOperationIsDocumented() throws Exception
     {
         // Given the documented controller
         // When fetching the OpenAPI document
-        // Then the search operation carries its summary and the radius example
+        // Then the search operation carries its summary
         mockMvc.perform(get("/v3/api-docs"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.openapi").isString())
                 .andExpect(jsonPath("$.paths['/search'].post").exists())
                 .andExpect(jsonPath("$.paths['/search'].post.summary").isNotEmpty())
-                .andExpect(jsonPath("$.components.schemas.SearchRequest.properties.radius.example").exists())
-                .andExpect(jsonPath("$.components.schemas.SearchRequest.properties.radius.example").value("100"))
+                .andExpect(jsonPath("$.components.schemas.SearchRequest.properties.radius").doesNotExist())
                 // Correct response structure: wrapper with trimmed item schema (no source/es_merged)
                 .andExpect(jsonPath("$.components.schemas.SearchResponse.properties.items.items.$ref").exists())
                 .andExpect(jsonPath("$.components.schemas.ArbolResponse.properties.source").doesNotExist())
@@ -63,12 +62,9 @@ class OpenApiDocsTest
                         .value("Single street tree response"))
                 .andExpect(jsonPath("$.components.schemas.SearchResponse.properties.items.description")
                         .value("Distance-sorted page, ascending"))
-                // Radius is optional/deprecated; fixed 1000m bucket response
-                .andExpect(jsonPath("$.components.schemas.SearchRequest.properties.radius.required").doesNotExist())
-                .andExpect(jsonPath("$.components.schemas.SearchRequest.properties.radius.deprecated").value(true))
-                .andExpect(jsonPath("$.components.schemas.SearchRequest.properties.radius.nullable").value(true))
+                // Fixed 1000m bucket response
                 .andExpect(jsonPath("$.components.schemas.SearchResponse.properties.radiusMeters.description")
-                        .value("Always 1000 (fixed bucket; client filters exact distance)"))
+                        .value("Always 1000 (fixed bucket)"))
                 // 503 response documented for Mongo outages
                 .andExpect(jsonPath("$.paths['/search'].post.responses.503" +
                         ".content.application/json.schema.$ref")

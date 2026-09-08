@@ -38,11 +38,11 @@ public class CachedArbolSearch
 
     /**
      * Searches through the {@code arboles} cache entry for one normalized input.
-     * Fixed 1000m bucket: radius argument is ignored for key/query; adapter uses 1080m padded query.
+     * Fixed 1000m bucket; adapter uses 1080m padded query.
      *
      * @param latitude normalized latitude
      * @param longitude normalized longitude
-     * @param radius ignored (always 1000m bucket)
+     * @param radius fixed 1000m bucket
      * @return mapped DTOs in ascending distance order, up to {@code MAX_ITEMS + 1}
      */
     @Cacheable(value = SearchLimits.CACHE_NAME, cacheResolver = "failOpenCacheResolver",

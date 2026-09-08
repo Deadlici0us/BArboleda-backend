@@ -31,6 +31,10 @@ app:
       enabled: true # ping once on boot; Lettuce connects lazily and the cache stays fail-open either way
 server:
   forward-headers-strategy: framework
+  compression:
+    enabled: true
+    mime-types: application/json,application/xml,text/html,text/xml,text/plain
+    min-response-size: 2KB
 management:
   endpoints:
     web:

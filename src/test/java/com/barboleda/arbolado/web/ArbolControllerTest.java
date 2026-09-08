@@ -44,10 +44,10 @@ class ArbolControllerTest
     @DisplayName("happy path returns 200 with the distance-sorted wrapper")
     void happyPath() throws Exception
     {
-        // Given a service result
+        // Given a service result (fixed 1000m bucket, 3-decimal snap)
         ArbolResponse dto = new ArbolResponse(123, "Jacaranda mimosifolia", 8, 30, 1, -58.3816, -34.6037);
         when(service.findNearby(any(SearchRequest.class)))
-                .thenReturn(new SearchResponse(List.of(dto), 1, false, -34.6037, -58.3816, 500));
+                .thenReturn(new SearchResponse(List.of(dto), 1, false, -34.604, -58.382, 1000));
 
         // When posting a valid search
         // Then the wrapper shape returns with the correlation header echoed
@@ -59,7 +59,7 @@ class ArbolControllerTest
                 .andExpect(jsonPath("$.items[0].nro_registro").value(123))
                 .andExpect(jsonPath("$.total").value(1))
                 .andExpect(jsonPath("$.truncated").value(false))
-                .andExpect(jsonPath("$.radiusMeters").value(500));
+                .andExpect(jsonPath("$.radiusMeters").value(1000));
     }
 
     @Test
@@ -112,16 +112,29 @@ class ArbolControllerTest
         // Given a service result and no incoming correlation id
         ArbolResponse dto = new ArbolResponse(123, "Jacaranda mimosifolia", 8, 30, 1, -58.3816, -34.6037);
         when(service.findNearby(any(SearchRequest.class)))
-                .thenReturn(new SearchResponse(List.of(dto), 1, false, -34.6037, -58.3816, 500));
+                .thenReturn(new SearchResponse(List.of(dto), 1, false, -34.604, -58.382, 1000));
 
-        // When posting without the header
+        // When posting without the header (optional radius omitted)
         MvcResult result = mockMvc.perform(post("/search").contentType(MediaType.APPLICATION_JSON)
-                .content("{\"latitude\":-34.6037,\"longitude\":-58.3816,\"radius\":500}"))
+                .content("{\"latitude\":-34.6037,\"longitude\":-58.3816}"))
                 .andExpect(status().isOk())
                 .andReturn();
 
         // Then a valid UUID echoes on the response
         assertThat(UUID.fromString(result.getResponse().getHeader("X-Request-Id"))).isNotNull();
+    }
+
+    @Test
+    @DisplayName("optional radius omitted returns 200 with fixed 1000m bucket")
+    void optionalRadiusOmitted() throws Exception
+    {
+        ArbolResponse dto = new ArbolResponse(123, "E", 10, 30, 1, -58.3816, -34.6037);
+        when(service.findNearby(any(SearchRequest.class)))
+                .thenReturn(new SearchResponse(List.of(dto), 1, false, -34.604, -58.382, 1000));
+        mockMvc.perform(post("/search").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"latitude\":-34.6037,\"longitude\":-58.3816}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.radiusMeters").value(1000));
     }
 
     @Test

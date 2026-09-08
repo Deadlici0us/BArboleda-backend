@@ -11,8 +11,8 @@ package com.barboleda.arbolado.domain;
 public final class SearchLimits
 {
 
-    /** Decimals kept when normalizing coordinates (~11m grid). */
-    public static final int COORDINATE_SCALE = 4;
+    /** Decimals kept when normalizing coordinates (~111m grid). */
+    public static final int COORDINATE_SCALE = 3;
 
     /** Minimum latitude in degrees. */
     public static final double MIN_LATITUDE = -90.0;
@@ -51,7 +51,13 @@ public final class SearchLimits
     public static final String MAX_RADIUS_STR = "1000";
 
     /** Maximum items returned per search before truncation. */
-    public static final int MAX_ITEMS = 100;
+    public static final int MAX_ITEMS = 1000;
+
+    /** Fixed bucket radius returned to clients (ignored in requests). */
+    public static final int FIXED_RADIUS_METERS = 1000;
+
+    /** Mongo query radius with padding: 1000m + ~78m half-diagonal snap shift. */
+    public static final int MONGO_QUERY_RADIUS_METERS = 1080;
 
     /** Spring cache name for search results. */
     public static final String CACHE_NAME = "arboles";

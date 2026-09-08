@@ -51,6 +51,22 @@ class RedisCacheConfigTest
     }
 
     @Test
+    @DisplayName("GZIP serializer produces compressed bytes with gzip magic header")
+    void gzipProducesCompressedBytes()
+    {
+        RedisSerializer<Object> serializer = config.cacheValueSerializer();
+        List<ArbolResponse> dtos = List.of(new ArbolResponse(123, "Jacaranda mimosifolia", 8, 30, 1, -58.3816,
+                -34.6037));
+        byte[] compressed = serializer.serialize(dtos);
+        assertThat(compressed).isNotNull();
+        assertThat(compressed.length > 0).isTrue();
+        // GZIP magic header: 0x1f 0x8b
+        assertThat(compressed[0]).isEqualTo((byte) 0x1f);
+        assertThat(compressed[1]).isEqualTo((byte) 0x8b);
+        assertThat(compressed.length).isLessThan(500); // much smaller than raw JSON
+    }
+
+    @Test
     @DisplayName("all-null DTO round-trips through the configured value serializer")
     void serializerRoundTripsNullFields()
     {

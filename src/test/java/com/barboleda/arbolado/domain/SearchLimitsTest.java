@@ -12,13 +12,13 @@ class SearchLimitsTest
 {
 
     @Test
-    @DisplayName("coordinate scale stays at 4 decimals (~11m grid)")
-    void coordinateScaleIsFour()
+    @DisplayName("coordinate scale stays at 3 decimals (~111m grid)")
+    void coordinateScaleIsThree()
     {
-        // Given the locked normalization precision from PLAN.md #0
+        // Given the locked normalization precision (3 decimals = ~111m grid)
         // When reading the scale constant
-        // Then it is 4
-        assertThat(SearchLimits.COORDINATE_SCALE).isEqualTo(4);
+        // Then it is 3
+        assertThat(SearchLimits.COORDINATE_SCALE).isEqualTo(3);
     }
 
     @Test
@@ -52,7 +52,9 @@ class SearchLimitsTest
         // Given the locked service limits from PLAN.md #0
         // When reading them
         // Then they match the contract
-        assertThat(SearchLimits.MAX_ITEMS).isEqualTo(100);
+        assertThat(SearchLimits.MAX_ITEMS).isEqualTo(1000);
         assertThat(SearchLimits.CACHE_NAME).isEqualTo("arboles");
+        assertThat(SearchLimits.FIXED_RADIUS_METERS).isEqualTo(1000);
+        assertThat(SearchLimits.MONGO_QUERY_RADIUS_METERS).isEqualTo(1080);
     }
 }

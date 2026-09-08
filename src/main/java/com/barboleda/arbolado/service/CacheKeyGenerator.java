@@ -7,12 +7,11 @@ public interface CacheKeyGenerator
 {
 
     /**
-     * Creates the cache key from normalized inputs.
+     * Creates the cache key from normalized coordinates (fixed-radius bucket, no radius segment).
      *
      * @param latitude normalized latitude
      * @param longitude normalized longitude
-     * @param radiusMeters rounded radius in whole meters
      * @return the key string
      */
-    String create(double latitude, double longitude, int radiusMeters);
+    String create(double latitude, double longitude);
 }

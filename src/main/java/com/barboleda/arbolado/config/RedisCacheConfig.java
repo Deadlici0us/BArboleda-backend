@@ -58,7 +58,8 @@ public class RedisCacheConfig implements CachingConfigurer
                 .allowIfBaseType(Object.class)
                 .build();
         mapper.activateDefaultTyping(validator, ObjectMapper.DefaultTyping.EVERYTHING);
-        return new GenericJackson2JsonRedisSerializer(mapper);
+        // Two-tier compression: GZIP over JSON shrinks worst-case ~628 KB → ~90 KB
+        return new GzipRedisSerializer(new GenericJackson2JsonRedisSerializer(mapper));
     }
 
 

@@ -45,12 +45,20 @@ public class ArbolController
      * @param request the validated search input
      * @return the wrapped, distance-sorted result
      */
-    @Operation(summary = "Search trees near a center point",
-            description = "Returns registry trees within the request radius, distance-sorted ascending")
+    @Operation(summary = "Search trees near a center point (fixed 1000m bucket)",
+            description = "Fixed 1000m bucket (1080m padded Mongo query, 1000 item cap). "
+                    + "Deprecated optional radius ignored; client filters exact distance locally. "
+                    + "Full-precision tree GPS in response; use Haversine + clustering. "
+                    + "HTTP GZIP applied with Accept-Encoding: gzip.")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Distance-sorted wrapper, possibly empty",
+            @ApiResponse(responseCode = "200", description = "Fixed 1000m bucket wrapper, "
+                    + "distance-sorted, possibly truncated (client filters exact radius)",
                     content = @Content(schema = @Schema(implementation = SearchResponse.class))),
-            @ApiResponse(responseCode = "400", description = "Invalid coordinates or radius",
+            @ApiResponse(responseCode = "400", description = "Invalid coordinates (radius optional, "
+                    + "deprecated; out-of-range rejected by validation)",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ProblemDetail.class))),
+            @ApiResponse(responseCode = "503", description = "MongoDB unavailable",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                             schema = @Schema(implementation = ProblemDetail.class)))})
     @PostMapping(path = "/search", consumes = MediaType.APPLICATION_JSON_VALUE,

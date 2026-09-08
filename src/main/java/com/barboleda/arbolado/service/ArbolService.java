@@ -5,11 +5,13 @@ import java.util.List;
 import org.springframework.stereotype.Component;
 
 import com.barboleda.arbolado.domain.ArbolResponse;
+import com.barboleda.arbolado.domain.SearchLimits;
 import com.barboleda.arbolado.domain.SearchRequest;
 import com.barboleda.arbolado.domain.SearchResponse;
 
 /**
- * Search facade: guards, normalizes, delegates to the cached path, then slices and wraps.
+ * Search facade: guards, normalizes, delegates to the fixed 1000m cached path,
+ * slices and wraps. Client-provided radius is optional/deprecated; backend ignores it.
  */
 @Component
 public class ArbolService implements ArbolSearchFacade
@@ -41,28 +43,33 @@ public class ArbolService implements ArbolSearchFacade
     }
 
     /**
-     * Runs one geospatial search end to end.
+     * Runs one geospatial search end to end. Fixed 1000m bucket; client radius ignored.
      *
-     * @param request the validated request; fractional radii round to whole meters first
+     * @param request the validated request; radius is optional and deprecated
      * @return the sliced, wrapped response with normalized inputs echoed back
      * @throws com.barboleda.arbolado.exception.InvalidSearchRequestException
-     *         on non-finite latitude, longitude or radius
+     *         on non-finite latitude or longitude
      */
     @Override
     public SearchResponse findNearby(SearchRequest request)
     {
         validator.requireFinite(request.latitude(), "latitude");
         validator.requireFinite(request.longitude(), "longitude");
-        validator.requireFinite(request.radius(), "radius");
+
+        // Radius is optional/deprecated; backend always uses fixed 1000m bucket.
+        if (request.radius() != null)
+        {
+            validator.requireFinite(request.radius(), "radius");
+        }
 
         double latitude = normalizer.normalize(request.latitude());
         double longitude = normalizer.normalize(request.longitude());
-        int radiusMeters = (int) Math.round(request.radius());
-        RadiusMeters radius = new RadiusMeters(radiusMeters); // validates 1..1000 once, reused below
 
-        List<ArbolResponse> fetched = cachedSearch.findNearbyCached(latitude, longitude, radius);
+        List<ArbolResponse> fetched = cachedSearch.findNearbyCached(
+                latitude, longitude, new RadiusMeters(SearchLimits.FIXED_RADIUS_METERS));
         SearchResultWindow.WindowResult result = window.window(fetched);
-        return new SearchResponse(result.items(), result.items().size(), result.truncated(),
-                latitude, longitude, radiusMeters);
+        return new SearchResponse(
+                result.items(), result.items().size(), result.truncated(),
+                latitude, longitude, SearchLimits.FIXED_RADIUS_METERS);
     }
 }

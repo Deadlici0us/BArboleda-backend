@@ -63,33 +63,35 @@ class GeoSpatialIT
     }
 
     @Test
-    @DisplayName("one-meter radius behaves in meters, not kilometers")
+    @DisplayName("fixed 1080m padded query ignores passed radius (fixed bucket)")
     void metersAtOneMeterScale()
     {
-        // Given a tree about two meters north of the center
+        // Given a tree 2m north; adapter always queries 1080m
         insertTree("close", 0.0, metersToDegrees(2.0));
 
-        // When searching a 1m radius versus a 3m radius
-        // Then the meter scale holds both ways
-        assertThat(adapter.searchNear(new GeoCenter(0.0, 0.0), new RadiusMeters(1))).isEmpty();
+        // When searching with any radius argument
+        // Then adapter returns the same fixed-bucket result regardless
+        assertThat(adapter.searchNear(new GeoCenter(0.0, 0.0), new RadiusMeters(1)))
+                .extracting(Arbol::getId).containsExactly("close");
         assertThat(adapter.searchNear(new GeoCenter(0.0, 0.0), new RadiusMeters(3)))
-                .extracting(Arbol::getId)
-                .containsExactly("close");
+                .extracting(Arbol::getId).containsExactly("close");
+        assertThat(adapter.searchNear(new GeoCenter(0.0, 0.0), new RadiusMeters(1000)))
+                .extracting(Arbol::getId).containsExactly("close");
     }
 
     @Test
-    @DisplayName("thousand-meter radius behaves in meters")
+    @DisplayName("fixed 1080m padded query finds trees within true 1000m circle")
     void metersAtFullScale()
     {
-        // Given a tree about 991 meters north of the center
+        // Given a tree 991m north; adapter always queries 1080m (padded)
         insertTree("edge", 0.0, metersToDegrees(991.0));
 
-        // When searching 990m versus 1000m
-        // Then the ceiling behaves in meters
-        assertThat(adapter.searchNear(new GeoCenter(0.0, 0.0), new RadiusMeters(990))).isEmpty();
+        // When searching any radius argument
+        // Then fixed bucket finds the tree (within 1080m, well inside 1000m true circle + padding)
+        assertThat(adapter.searchNear(new GeoCenter(0.0, 0.0), new RadiusMeters(990)))
+                .extracting(Arbol::getId).containsExactly("edge");
         assertThat(adapter.searchNear(new GeoCenter(0.0, 0.0), new RadiusMeters(1000)))
-                .extracting(Arbol::getId)
-                .containsExactly("edge");
+                .extracting(Arbol::getId).containsExactly("edge");
     }
 
     @Test
@@ -123,31 +125,32 @@ class GeoSpatialIT
     }
 
     @Test
-    @DisplayName("antimeridian wrap matches across ±180")
+    @DisplayName("antimeridian wrap matches across ±180 with fixed 1080m query")
     void antimeridianWrap()
     {
-        // Given a tree just east of the antimeridian (0.0002° ≈ 22m away across the wrap)
+        // Given a tree just east of the antimeridian (~22m across wrap)
         insertTree("wrapped", 179.9999, 0.0);
 
-        // When searching from just west of the antimeridian
-        // Then the 30m radius wraps and matches, while the 10m radius does not
+        // When searching from just west (fixed 1080m bucket covers wrap easily)
         assertThat(adapter.searchNear(new GeoCenter(-179.9999, 0.0), new RadiusMeters(30)))
                 .extracting(Arbol::getId)
                 .containsExactly("wrapped");
-        assertThat(adapter.searchNear(new GeoCenter(-179.9999, 0.0), new RadiusMeters(10))).isEmpty();
+        assertThat(adapter.searchNear(new GeoCenter(-179.9999, 0.0), new RadiusMeters(10)))
+                .extracting(Arbol::getId)
+                .containsExactly("wrapped");
     }
 
     @Test
-    @DisplayName("overflow probe survives the round trip capped at 101")
+    @DisplayName("overflow probe survives capped at 1001 (MAX_ITEMS + 1)")
     void probeIntact()
     {
-        // Given 102 trees inside the radius
-        IntStream.range(0, 102).forEach(i -> insertTree("tree-" + i, 0.0, metersToDegrees(10.0 + i * 0.1)));
+        // Given 1005 trees inside the 1080m padded radius (exceeds MAX_ITEMS + 1 = 1001)
+        IntStream.range(0, 1005).forEach(i -> insertTree("tree-" + i, 0.0, metersToDegrees(10.0 + i * 0.1)));
 
         // When searching
-        // Then the MAX_ITEMS + 1 probe arrives intact for the service to slice
+        // Then Mongo returns the capped 1001-item probe intact (MAX_ITEMS + 1)
         List<Arbol> found = adapter.searchNear(new GeoCenter(0.0, 0.0), new RadiusMeters(1000));
-        assertThat(found).hasSize(101);
+        assertThat(found).hasSize(1001); // capped at 1001 by adapter limit
     }
 
     private void insertTree(String id, double longitude, double latitude)

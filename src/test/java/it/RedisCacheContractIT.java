@@ -131,12 +131,12 @@ class RedisCacheContractIT
     }
 
     @Test
-    @DisplayName("warm hit skips the loader and round-trips the 101 probe intact")
+    @DisplayName("warm hit skips loader, round-trips 1001 DTOs through GZIP, compressed under 150KB")
     void warmHitSkipsLoader()
     {
-        // Given one loaded probe-sized entry
+        // Given one loaded probe (1001 DTOs = MAX_ITEMS + 1)
         AtomicInteger loaderRuns = new AtomicInteger();
-        List<ArbolResponse> probe = IntStream.range(0, 101).mapToObj(this::dto).toList();
+        List<ArbolResponse> probe = IntStream.range(0, 1001).mapToObj(this::dto).toList();
         List<ArbolResponse> first = cache.get("probe-key", () ->
         {
             loaderRuns.incrementAndGet();
@@ -150,10 +150,22 @@ class RedisCacheContractIT
             return List.of();
         });
 
-        // Then the loader ran once and the 101 DTOs survived the Redis JSON round trip
+        // Then loader ran once, 1001 DTOs survive GZIP round-trip, payload well under 150KB
         assertThat(loaderRuns).hasValue(1);
-        assertThat(first).hasSize(101);
+        assertThat(first).hasSize(1001);
         assertThat(second).isEqualTo(probe);
+
+        // Confirm compressed payload size (GZIP reduces ~raw to well under 150KB)
+        byte[] rawKey = (SearchLimits.CACHE_NAME + "::" + "probe-key").getBytes(StandardCharsets.UTF_8);
+        try (RedisConnection conn = connectionFactory.getConnection())
+        {
+            byte[] compressed = conn.stringCommands().get(rawKey);
+            assertThat(compressed).isNotNull();
+            assertThat(compressed.length).isGreaterThan(0);
+            assertThat(compressed[0]).isEqualTo((byte) 0x1f); // GZIP magic
+            assertThat(compressed[1]).isEqualTo((byte) 0x8b);
+            assertThat(compressed.length).isLessThan(150_000); // compressed under 150KB
+        }
     }
 
     @Test

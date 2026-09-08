@@ -6,8 +6,8 @@ import org.springframework.cache.interceptor.KeyGenerator;
 import org.springframework.stereotype.Component;
 
 /**
- * Programmatic cache key generator: eliminates the hidden SpEL string dependency
- * in {@code @Cacheable} by computing the key directly from method arguments.
+ * Programmatic cache key generator: eliminates hidden SpEL dependency.
+ * Fixed-radius bucket: key uses only normalized lat/lon (3-decimal).
  */
 @Component("cacheKeyGenerator")
 public class CacheKeyGeneratorAdapter implements KeyGenerator
@@ -23,19 +23,17 @@ public class CacheKeyGeneratorAdapter implements KeyGenerator
     @Override
     public Object generate(Object target, Method method, Object... params)
     {
-        if (params.length < 3)
+        if (params.length < 2)
         {
             throw new IllegalArgumentException(
-                    "CacheKeyGeneratorAdapter expects (latitude, longitude, radiusMeters), got "
+                    "CacheKeyGeneratorAdapter expects (latitude, longitude), got "
                             + params.length);
         }
         double latitude = (params[0] instanceof Number)
                 ? ((Number) params[0]).doubleValue() : Double.parseDouble(String.valueOf(params[0]));
         double longitude = (params[1] instanceof Number)
                 ? ((Number) params[1]).doubleValue() : Double.parseDouble(String.valueOf(params[1]));
-        int radiusMeters = (params[2] instanceof RadiusMeters) ? ((RadiusMeters) params[2]).value()
-                : ((Number) params[2]).intValue();
-        return keyGenerator.create(latitude, longitude, radiusMeters);
+        return keyGenerator.create(latitude, longitude);
     }
 
     @Override

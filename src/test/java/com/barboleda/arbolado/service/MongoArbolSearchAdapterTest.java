@@ -58,25 +58,22 @@ class MongoArbolSearchAdapterTest
     }
 
     @Test
-    @DisplayName("query is spherical with a 101 probe and meter wire distance")
+    @DisplayName("query is spherical with 1001 probe and 1080m wire distance (padded)")
     void sphericalProbeWithMeterWireDistance()
     {
         // Given stubbed results
         stubResults(tree("x"));
 
-        // When searching a 500m radius
-        adapter.searchNear(CENTER, new RadiusMeters(500));
+        adapter.searchNear(CENTER, new RadiusMeters(500)); // passed radius ignored
 
-        // Then the captured query is spherical, probes MAX_ITEMS + 1, and the wire
-        // radians × earth-radius-km × 1000 land back on meters (the driver takes radians)
         ArgumentCaptor<NearQuery> captor = ArgumentCaptor.forClass(NearQuery.class);
         verify(mongoTemplate).geoNear(captor.capture(), eq(Arbol.class));
         NearQuery query = captor.getValue();
         assertThat(query.isSpherical()).isTrue();
         Document wire = query.toDocument();
-        assertThat(wire.getLong("num")).isEqualTo(101L);
+        assertThat(wire.getLong("num")).isEqualTo(1001L); // MAX_ITEMS + 1
         double meters = wire.getDouble("maxDistance") * wire.getDouble("distanceMultiplier") * 1000.0;
-        assertThat(meters).isCloseTo(500.0, within(1e-6));
+        assertThat(meters).isCloseTo(1080.0, within(1e-6)); // MONGO_QUERY_RADIUS_METERS
     }
 
     @Test

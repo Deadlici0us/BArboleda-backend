@@ -69,7 +69,7 @@ class SearchRequestValidationTest
         // Then every one reports a violation
         assertThat(validator.validate(new SearchRequest(null, -58.3816, 500.0))).isNotEmpty();
         assertThat(validator.validate(new SearchRequest(-34.6037, null, 500.0))).isNotEmpty();
-        assertThat(validator.validate(new SearchRequest(-34.6037, -58.3816, null))).isNotEmpty();
+        assertThat(validator.validate(new SearchRequest(-34.6037, -58.3816, null))).isEmpty(); // optional
     }
 
     @Test

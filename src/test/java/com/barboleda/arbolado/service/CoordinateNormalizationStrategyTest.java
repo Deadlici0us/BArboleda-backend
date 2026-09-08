@@ -15,37 +15,28 @@ class CoordinateNormalizationStrategyTest
     private final CoordinateNormalizationStrategy strategy = new RoundingNormalizationStrategy();
 
     @Test
-    @DisplayName("already-rounded coordinate passes through unchanged")
+    @DisplayName("already-rounded 3-decimal passes through")
     void unchangedPassthrough()
     {
-        // Given an already 4-decimal coordinate
-        // When normalizing
-        // Then it is returned as-is
-        assertThat(strategy.normalize(-34.6037)).isEqualTo(-34.6037);
+        assertThat(strategy.normalize(-34.604)).isEqualTo(-34.604);
         assertThat(strategy.normalize(90.0)).isEqualTo(90.0);
         assertThat(strategy.normalize(-180.0)).isEqualTo(-180.0);
         assertThat(strategy.normalize(5.0)).isEqualTo(5.0);
     }
 
     @Test
-    @DisplayName("fifth decimal rounds half up at scale 4")
+    @DisplayName("4th decimal rounds half up at scale 3")
     void roundsHalfUp()
     {
-        // Given values straddling the 5th decimal
-        // When normalizing
-        // Then HALF_UP applies at scale 4
-        assertThat(strategy.normalize(1.23455)).isEqualTo(1.2346);
-        assertThat(strategy.normalize(1.23454)).isEqualTo(1.2345);
+        assertThat(strategy.normalize(1.2345)).isEqualTo(1.235);
+        assertThat(strategy.normalize(1.2344)).isEqualTo(1.234);
     }
 
     @Test
-    @DisplayName("two nearby inputs collapse onto one grid cell")
+    @DisplayName("two nearby inputs collapse onto one 3-decimal grid cell (~111m)")
     void twoStepsCollapse()
     {
-        // Given two inputs inside the same ~11m grid cell
-        // When normalizing both
-        // Then they produce the same key-stable value
-        assertThat(strategy.normalize(1.23455)).isEqualTo(strategy.normalize(1.234551));
+        assertThat(strategy.normalize(1.2345)).isEqualTo(strategy.normalize(1.23451));
     }
 
     @Test

@@ -5,11 +5,9 @@ import org.springframework.stereotype.Component;
 import com.barboleda.arbolado.domain.SearchLimits;
 
 /**
- * Rounds coordinates to {@link SearchLimits#COORDINATE_SCALE} decimals, HALF_UP.
+ * Rounds coordinates to 3-decimal grid (~111m). Used for fixed 1000m bucket keys.
  *
- * <p>Uses scaled-long arithmetic (no {@code BigDecimal} allocation) on the hot
- * path. Signed zero canonicalizes to {@code 0.0} so {@code -0.0} and {@code 0.0}
- * share one cache key. Non-finite inputs are rejected fast.
+ * <p>Uses scaled-long arithmetic (no {@code BigDecimal}). Signed zero canonicalizes.
  */
 @Component
 public class RoundingNormalizationStrategy implements CoordinateNormalizationStrategy

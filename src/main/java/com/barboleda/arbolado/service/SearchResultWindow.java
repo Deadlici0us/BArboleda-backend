@@ -8,7 +8,8 @@ import com.barboleda.arbolado.domain.ArbolResponse;
 import com.barboleda.arbolado.domain.SearchLimits;
 
 /**
- * Slices fetched results and computes the truncation flag.
+ * Slices fetched results at MAX_ITEMS (1000). Truncation indicates >1000 trees
+ * within the 1080m padded query (e.g. large parks); client must handle truncated.
  */
 @Component
 public class SearchResultWindow

@@ -25,11 +25,4 @@ public record RadiusMeters(int value)
         }
     }
 
-    /**
-     * Converts the radius to kilometers (floating-point division preserved).
-     */
-    public double toKilometers()
-    {
-        return value / 1000.0;
-    }
 }

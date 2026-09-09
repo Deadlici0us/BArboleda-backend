@@ -8,7 +8,7 @@ Geospatial tree search for Buenos Aires — a fixed-bucket, read-only API that r
 [![Docker](https://img.shields.io/badge/Docker-multi--stage-blue)](https://github.com/Deadlici0us/BArboleda-backend/pkgs)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow)](#license)
 [![Swagger UI](https://img.shields.io/badge/API-Swagger%20UI-6f42c1)](https://api.anibal-flores.com/BArboleda/swagger-ui/index.html)
-[![Live Demo](https://img.shields.io/badge/demo-coming_soon-lightgrey)]()
+[![Live Demo](https://img.shields.io/badge/demo-live-blue)](https://anibal-flores.com/BArboleda-Demo)
 
 The dataset is the Buenos Aires city tree inventory, ingested out-of-band by the ETL pipeline; this service is strictly read-only.
 

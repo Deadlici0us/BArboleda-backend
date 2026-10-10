@@ -54,38 +54,207 @@ public class Arbol
      */
     public Arbol()
     {
+        // Intentionally empty: Spring Data Mongo instantiates reads via reflection.
     }
 
     /**
      * Builds a fully populated tree.
      *
-     * @param id tree document id
-     * @param location GeoJSON point in lon-first order, may be null
-     * @param nroRegistro registry number, may be null
-     * @param nombreCientifico scientific name, may be null
-     * @param alturaArbol tree height, may be null
-     * @param diametroAlturaPecho diameter at breast height, may be null
-     * @param comuna district number, may be null
-     * @param longitude ETL longitude, may be null
-     * @param latitude ETL latitude, may be null
-     * @param source dataset source tag, may be null
-     * @param esMerged merged-record flag, may be null
+     * @return a fresh builder with every field unset
      */
-    public Arbol(String id, GeoJsonPoint location, Integer nroRegistro, String nombreCientifico, Integer alturaArbol,
-            Integer diametroAlturaPecho, Integer comuna, Double longitude, Double latitude, String source,
-            Boolean esMerged)
+    public static Builder builder()
     {
-        this.id = id;
-        this.location = location;
-        this.nroRegistro = nroRegistro;
-        this.nombreCientifico = nombreCientifico;
-        this.alturaArbol = alturaArbol;
-        this.diametroAlturaPecho = diametroAlturaPecho;
-        this.comuna = comuna;
-        this.longitude = longitude;
-        this.latitude = latitude;
-        this.source = source;
-        this.esMerged = esMerged;
+        return new Builder();
+    }
+
+    /**
+     * Step builder for fully populated trees (tests and fixtures).
+     *
+     * <p>Replaces the former 11-parameter constructor: one fluent call per field
+     * instead of one positional argument list.
+     */
+    public static final class Builder
+    {
+
+        private String id;
+
+        private GeoJsonPoint location;
+
+        private Integer nroRegistro;
+
+        private String nombreCientifico;
+
+        private Integer alturaArbol;
+
+        private Integer diametroAlturaPecho;
+
+        private Integer comuna;
+
+        private Double longitude;
+
+        private Double latitude;
+
+        private String source;
+
+        private Boolean esMerged;
+
+        private Builder()
+        {
+        }
+
+        /**
+         * Sets the document id.
+         *
+         * @param id the id
+         * @return this builder
+         */
+        public Builder id(String id)
+        {
+            this.id = id;
+            return this;
+        }
+
+        /**
+         * Sets the GeoJSON query point.
+         *
+         * @param location the location, may be null
+         * @return this builder
+         */
+        public Builder location(GeoJsonPoint location)
+        {
+            this.location = location;
+            return this;
+        }
+
+        /**
+         * Sets the registry number.
+         *
+         * @param nroRegistro the registry number, may be null
+         * @return this builder
+         */
+        public Builder nroRegistro(Integer nroRegistro)
+        {
+            this.nroRegistro = nroRegistro;
+            return this;
+        }
+
+        /**
+         * Sets the scientific name.
+         *
+         * @param nombreCientifico the name, may be null
+         * @return this builder
+         */
+        public Builder nombreCientifico(String nombreCientifico)
+        {
+            this.nombreCientifico = nombreCientifico;
+            return this;
+        }
+
+        /**
+         * Sets the tree height.
+         *
+         * @param alturaArbol the height, may be null
+         * @return this builder
+         */
+        public Builder alturaArbol(Integer alturaArbol)
+        {
+            this.alturaArbol = alturaArbol;
+            return this;
+        }
+
+        /**
+         * Sets the diameter at breast height.
+         *
+         * @param diametroAlturaPecho the diameter, may be null
+         * @return this builder
+         */
+        public Builder diametroAlturaPecho(Integer diametroAlturaPecho)
+        {
+            this.diametroAlturaPecho = diametroAlturaPecho;
+            return this;
+        }
+
+        /**
+         * Sets the district number.
+         *
+         * @param comuna the district, may be null
+         * @return this builder
+         */
+        public Builder comuna(Integer comuna)
+        {
+            this.comuna = comuna;
+            return this;
+        }
+
+        /**
+         * Sets the ETL longitude.
+         *
+         * @param longitude the longitude, may be null
+         * @return this builder
+         */
+        public Builder longitude(Double longitude)
+        {
+            this.longitude = longitude;
+            return this;
+        }
+
+        /**
+         * Sets the ETL latitude.
+         *
+         * @param latitude the latitude, may be null
+         * @return this builder
+         */
+        public Builder latitude(Double latitude)
+        {
+            this.latitude = latitude;
+            return this;
+        }
+
+        /**
+         * Sets the dataset source tag.
+         *
+         * @param source the source, may be null
+         * @return this builder
+         */
+        public Builder source(String source)
+        {
+            this.source = source;
+            return this;
+        }
+
+        /**
+         * Sets the merged-record flag.
+         *
+         * @param esMerged the flag, may be null
+         * @return this builder
+         */
+        public Builder esMerged(Boolean esMerged)
+        {
+            this.esMerged = esMerged;
+            return this;
+        }
+
+        /**
+         * Builds the tree from the collected fields.
+         *
+         * @return a fully populated tree
+         */
+        public Arbol build()
+        {
+            Arbol tree = new Arbol();
+            tree.id = id;
+            tree.location = location;
+            tree.nroRegistro = nroRegistro;
+            tree.nombreCientifico = nombreCientifico;
+            tree.alturaArbol = alturaArbol;
+            tree.diametroAlturaPecho = diametroAlturaPecho;
+            tree.comuna = comuna;
+            tree.longitude = longitude;
+            tree.latitude = latitude;
+            tree.source = source;
+            tree.esMerged = esMerged;
+            return tree;
+        }
     }
 
     /**

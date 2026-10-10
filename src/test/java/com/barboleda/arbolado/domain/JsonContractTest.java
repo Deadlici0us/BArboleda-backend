@@ -47,7 +47,7 @@ class JsonContractTest
 
     @Test
     @DisplayName("empty entity uses the persistence no-arg constructor with null fields")
-    void noArgConstructorDefaults() throws Exception
+    void noArgConstructorDefaults()
     {
         // Given an entity built the way Spring Data Mongo instantiates reads
         Arbol entity = new Arbol();

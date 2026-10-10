@@ -113,7 +113,8 @@ class MongoArbolSearchAdapterTest
 
     private Arbol tree(String id)
     {
-        return new Arbol(id, new GeoJsonPoint(-58.3816, -34.6037), 1, "Eucalyptus", 10, 40, 1, -58.3816, -34.6037,
-                "csv", false);
+        return Arbol.builder().id(id).location(new GeoJsonPoint(-58.3816, -34.6037)).nroRegistro(1)
+                .nombreCientifico("Eucalyptus").alturaArbol(10).diametroAlturaPecho(40).comuna(1).longitude(-58.3816)
+                .latitude(-34.6037).source("csv").esMerged(false).build();
     }
 }

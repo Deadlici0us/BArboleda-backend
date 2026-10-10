@@ -11,6 +11,10 @@ import org.springframework.data.redis.serializer.RedisSerializer;
 public class RedisCacheDefaultsFactory
 {
 
+    private RedisCacheDefaultsFactory()
+    {
+    }
+
     public static RedisCacheConfiguration buildDefaults(CacheProperties properties,
             RedisSerializer<Object> valueSerializer)
     {

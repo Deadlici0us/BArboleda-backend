@@ -13,7 +13,7 @@ public class CacheKeyFactory implements CacheKeyGenerator
 {
 
     private static final int SCALE = 3;
-    private static final double SCALE_FACTOR = 1000.0;
+    private static final double SCALE_FACTOR = Math.pow(10.0, SCALE);
 
     @Override
     public String create(double latitude, double longitude)

@@ -37,8 +37,7 @@ class CacheKeyFactoryTest
     void negativeZeroCanonicalized()
     {
         String key = factory.create(-0.0, -0.0);
-        assertThat(key).isEqualTo(factory.create(0.0, 0.0));
-        assertThat(key).doesNotContain("-0.000");
+        assertThat(key).isEqualTo(factory.create(0.0, 0.0)).doesNotContain("-0.000");
     }
 
     @Test

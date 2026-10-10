@@ -24,8 +24,7 @@ public class SearchResultWindow
     public WindowResult window(List<ArbolResponse> fetched)
     {
         boolean truncated = fetched.size() > SearchLimits.MAX_ITEMS;
-        List<ArbolResponse> items = truncated ? List.copyOf(fetched.subList(0, SearchLimits.MAX_ITEMS))
-                : List.copyOf(fetched);
+        List<ArbolResponse> items = List.copyOf(truncated ? fetched.subList(0, SearchLimits.MAX_ITEMS) : fetched);
         return new WindowResult(items, truncated);
     }
 

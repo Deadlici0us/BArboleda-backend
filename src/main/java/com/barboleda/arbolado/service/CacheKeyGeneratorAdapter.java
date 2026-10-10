@@ -29,10 +29,10 @@ public class CacheKeyGeneratorAdapter implements KeyGenerator
                     "CacheKeyGeneratorAdapter expects (latitude, longitude), got "
                             + params.length);
         }
-        double latitude = (params[0] instanceof Number)
-                ? ((Number) params[0]).doubleValue() : Double.parseDouble(String.valueOf(params[0]));
-        double longitude = (params[1] instanceof Number)
-                ? ((Number) params[1]).doubleValue() : Double.parseDouble(String.valueOf(params[1]));
+        double latitude = (params[0] instanceof Number lat)
+                ? lat.doubleValue() : Double.parseDouble(String.valueOf(params[0]));
+        double longitude = (params[1] instanceof Number lon)
+                ? lon.doubleValue() : Double.parseDouble(String.valueOf(params[1]));
         return keyGenerator.create(latitude, longitude);
     }
 

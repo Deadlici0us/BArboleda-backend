@@ -1,7 +1,5 @@
 package com.barboleda.arbolado.config;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CachingConfigurer;
 import org.springframework.cache.interceptor.CacheErrorHandler;
@@ -30,8 +28,6 @@ import io.micrometer.core.instrument.MeterRegistry;
 @Configuration
 public class RedisCacheConfig implements CachingConfigurer
 {
-
-    private static final Logger log = LoggerFactory.getLogger(RedisCacheConfig.class);
 
     private final MeterRegistry registry;
 

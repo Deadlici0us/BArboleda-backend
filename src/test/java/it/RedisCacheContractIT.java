@@ -12,6 +12,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.LockSupport;
 import java.util.stream.IntStream;
 
 import org.junit.jupiter.api.AfterEach;
@@ -160,11 +161,10 @@ class RedisCacheContractIT
         try (RedisConnection conn = connectionFactory.getConnection())
         {
             byte[] compressed = conn.stringCommands().get(rawKey);
-            assertThat(compressed).isNotNull();
-            assertThat(compressed.length).isGreaterThan(0);
+            assertThat(compressed).isNotNull().isNotEmpty();
             assertThat(compressed[0]).isEqualTo((byte) 0x1f); // GZIP magic
             assertThat(compressed[1]).isEqualTo((byte) 0x8b);
-            assertThat(compressed.length).isLessThan(150_000); // compressed under 150KB
+            assertThat(compressed).hasSizeLessThan(150_000); // compressed under 150KB
         }
     }
 
@@ -181,12 +181,12 @@ class RedisCacheContractIT
         assertThat(ttlSecondsOf("ttl-key")).isLessThanOrEqualTo(TimeUnit.DAYS.toSeconds(30));
     }
 
-    private List<ArbolResponse> load(String key, AtomicInteger loaderRuns) throws Exception
+    private List<ArbolResponse> load(String key, AtomicInteger loaderRuns)
     {
         return cache.get(key, () ->
         {
             loaderRuns.incrementAndGet();
-            Thread.sleep(200);
+            LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(200));
             return List.of(dto(1));
         });
     }

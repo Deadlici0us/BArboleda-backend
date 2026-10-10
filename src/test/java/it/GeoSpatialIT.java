@@ -120,8 +120,9 @@ class GeoSpatialIT
 
         // When searching
         // Then Mongo refuses the geo query — the index must exist out-of-band
-        assertThatThrownBy(() -> adapter.searchNear(new GeoCenter(-58.3816, -34.6037),
-                new RadiusMeters(1000))).isInstanceOf(DataAccessException.class);
+        GeoCenter center = new GeoCenter(-58.3816, -34.6037);
+        RadiusMeters bucket = new RadiusMeters(1000);
+        assertThatThrownBy(() -> adapter.searchNear(center, bucket)).isInstanceOf(DataAccessException.class);
     }
 
     @Test
@@ -155,8 +156,9 @@ class GeoSpatialIT
 
     private void insertTree(String id, double longitude, double latitude)
     {
-        template.insert(new Arbol(id, new GeoJsonPoint(longitude, latitude), 1, "Eucalyptus", 10, 40, 1, longitude,
-                latitude, "csv", false));
+        template.insert(Arbol.builder().id(id).location(new GeoJsonPoint(longitude, latitude)).nroRegistro(1)
+                .nombreCientifico("Eucalyptus").alturaArbol(10).diametroAlturaPecho(40).comuna(1).longitude(longitude)
+                .latitude(latitude).source("csv").esMerged(false).build());
     }
 
     private double metersToDegrees(double meters)

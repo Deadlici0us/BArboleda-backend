@@ -3,6 +3,7 @@ package com.barboleda.arbolado.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.Arrays;
@@ -32,7 +33,9 @@ class CachedArbolSearchTest
     void delegatesLonFirstKmQuery()
     {
         // Given one stored tree mapping to one DTO
-        Arbol entity = new Arbol("x", null, 1, "Eucalyptus", 10, 40, 1, -58.3816, -34.6037, "csv", false);
+        Arbol entity = Arbol.builder().id("x").nroRegistro(1).nombreCientifico("Eucalyptus").alturaArbol(10)
+                .diametroAlturaPecho(40).comuna(1).longitude(-58.3816).latitude(-34.6037).source("csv").esMerged(false)
+                .build();
         ArbolResponse dto = new ArbolResponse(1, "Eucalyptus", 10, 40, 1, -58.3816, -34.6037);
         when(port.searchNear(any(GeoCenter.class), any(RadiusMeters.class))).thenReturn(List.of(entity));
         when(mapper.toResponse(entity)).thenReturn(dto);
@@ -41,7 +44,7 @@ class CachedArbolSearchTest
         List<ArbolResponse> found = cached.findNearbyCached(-34.6037, -58.3816, new RadiusMeters(500));
 
         // Then the port saw Point(lon, lat) with 0.5 km and the DTO came back
-        org.mockito.Mockito.verify(port).searchNear(any(GeoCenter.class), any(RadiusMeters.class));
+        verify(port).searchNear(any(GeoCenter.class), any(RadiusMeters.class));
         assertThat(found).containsExactly(dto);
     }
 
@@ -51,7 +54,9 @@ class CachedArbolSearchTest
     {
         // Given a full probe page from the port
         Arbol[] entities = new Arbol[SearchLimits.MAX_ITEMS + 1];
-        Arrays.setAll(entities, i -> new Arbol("id-" + i, null, i, "E", 1, 1, 1, 0.0, 0.0, "csv", false));
+        Arrays.setAll(entities, i -> Arbol.builder().id("id-" + i).nroRegistro(i).nombreCientifico("E")
+                .alturaArbol(1).diametroAlturaPecho(1).comuna(1).longitude(0.0).latitude(0.0).source("csv")
+                .esMerged(false).build());
         when(port.searchNear(any(GeoCenter.class), any(RadiusMeters.class))).thenReturn(Arrays.asList(entities));
         when(mapper.toResponse(any(Arbol.class))).thenAnswer(call -> dtoFor((Arbol) call.getArgument(0)));
 

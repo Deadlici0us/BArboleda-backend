@@ -22,8 +22,9 @@ class ArbolMapperTest
     void fullEntityMapsOneToOne()
     {
         // Given an entity with every contracted field populated
-        Arbol entity = new Arbol("abc123", new GeoJsonPoint(-58.3816, -34.6037), 123,
-                "Jacaranda mimosifolia", 8, 30, 1, -58.3816, -34.6037, "csv", false);
+        Arbol entity = Arbol.builder().id("abc123").location(new GeoJsonPoint(-58.3816, -34.6037)).nroRegistro(123)
+                .nombreCientifico("Jacaranda mimosifolia").alturaArbol(8).diametroAlturaPecho(30).comuna(1)
+                .longitude(-58.3816).latitude(-34.6037).source("csv").esMerged(false).build();
 
         // When mapping
         ArbolResponse response = mapper.toResponse(entity);
@@ -43,8 +44,7 @@ class ArbolMapperTest
     void lonFirstOrdering()
     {
         // Given a point where x != y so a flip is visible
-        Arbol entity = new Arbol("x", new GeoJsonPoint(10.0, 20.0), null, null, null, null, null, null, null, null,
-                null);
+        Arbol entity = Arbol.builder().id("x").location(new GeoJsonPoint(10.0, 20.0)).build();
 
         // When mapping
         ArbolResponse response = mapper.toResponse(entity);
@@ -52,8 +52,8 @@ class ArbolMapperTest
         // Then x lands on long and y on lat (never flipped), null fields coalesce to defaults
         assertThat(response.longitude()).isEqualTo(10.0);
         assertThat(response.latitude()).isEqualTo(20.0);
-        assertThat(response.nroRegistro()).isEqualTo(0);
-        assertThat(response.nombreCientifico()).isEqualTo("");
+        assertThat(response.nroRegistro()).isZero();
+        assertThat(response.nombreCientifico()).isEmpty();
     }
 
     @Test
@@ -61,18 +61,18 @@ class ArbolMapperTest
     void nullsMapToDefaults()
     {
         // Given an entity with null location and null optionals
-        Arbol entity = new Arbol("x", null, null, null, null, null, null, null, null, null, null);
+        Arbol entity = Arbol.builder().id("x").build();
 
         // When mapping
         ArbolResponse response = mapper.toResponse(entity);
 
         // Then coordinates and optionals coalesce to defaults (0 / 0.0 / "")
-        assertThat(response.longitude()).isEqualTo(0.0);
-        assertThat(response.latitude()).isEqualTo(0.0);
-        assertThat(response.nroRegistro()).isEqualTo(0);
-        assertThat(response.alturaArbol()).isEqualTo(0);
-        assertThat(response.diametroAlturaPecho()).isEqualTo(0);
-        assertThat(response.comuna()).isEqualTo(0);
-        assertThat(response.nombreCientifico()).isEqualTo("");
+        assertThat(response.longitude()).isZero();
+        assertThat(response.latitude()).isZero();
+        assertThat(response.nroRegistro()).isZero();
+        assertThat(response.alturaArbol()).isZero();
+        assertThat(response.diametroAlturaPecho()).isZero();
+        assertThat(response.comuna()).isZero();
+        assertThat(response.nombreCientifico()).isEmpty();
     }
 }

@@ -7,6 +7,7 @@ import static org.mockito.ArgumentMatchers.anyDouble;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
@@ -36,19 +37,21 @@ class ArbolServiceTest
     @DisplayName("non-finite latitude or longitude throws before touching cache")
     void finiteGuardRejects()
     {
-        assertThatThrownBy(() -> service.findNearby(new SearchRequest(Double.NaN, -58.3816)))
+        SearchRequest nanLatitude = new SearchRequest(Double.NaN, -58.3816);
+        SearchRequest nanLongitude = new SearchRequest(-34.6037, Double.NaN);
+        SearchRequest infiniteLatitude = new SearchRequest(Double.POSITIVE_INFINITY, -58.3816);
+        SearchRequest infiniteLongitude = new SearchRequest(-34.6037, Double.NEGATIVE_INFINITY);
+        assertThatThrownBy(() -> service.findNearby(nanLatitude))
                 .isInstanceOf(InvalidSearchRequestException.class);
-        assertThatThrownBy(() -> service.findNearby(new SearchRequest(-34.6037, Double.NaN)))
+        assertThatThrownBy(() -> service.findNearby(nanLongitude))
                 .isInstanceOf(InvalidSearchRequestException.class);
-        assertThatThrownBy(
-                () -> service.findNearby(new SearchRequest(Double.POSITIVE_INFINITY, -58.3816)))
+        assertThatThrownBy(() -> service.findNearby(infiniteLatitude))
                 .isInstanceOf(InvalidSearchRequestException.class);
-        assertThatThrownBy(
-                () -> service.findNearby(new SearchRequest(-34.6037, Double.NEGATIVE_INFINITY)))
+        assertThatThrownBy(() -> service.findNearby(infiniteLongitude))
                 .isInstanceOf(InvalidSearchRequestException.class);
 
         // Non-finite inputs must never touch the cached search
-        org.mockito.Mockito.verifyNoInteractions(cachedSearch);
+        verifyNoInteractions(cachedSearch);
     }
 
     @Test

@@ -52,7 +52,7 @@ public class MongoArbolSearchAdapter implements ArbolSearchPort
         NearQuery query = NearQuery.near(point)
                 .spherical(true)
                 .maxDistance(maxDistance)
-                .limit(SearchLimits.MAX_ITEMS + 1)
+                .limit(SearchLimits.MAX_ITEMS + 1L)
                 .query(projection);
         return mongoTemplate.geoNear(query, Arbol.class).getContent().stream()
                 .map(GeoResult::getContent).toList();

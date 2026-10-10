@@ -2,6 +2,7 @@ package com.barboleda.arbolado.config;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
@@ -69,7 +70,7 @@ class MongoConfigTest
         // Given the Mongo adapter type
         // When inspecting its declared methods
         // Then no geo-index backstop runner is present
-        assertThat(Arrays.stream(MongoConfig.class.getMethods()).map(m -> m.getName())).doesNotContain(
-                "ensureGeoIndex");
+        assertThat(Arrays.stream(MongoConfig.class.getMethods()).map(Method::getName)).isNotEmpty()
+                .doesNotContain("ensureGeoIndex");
     }
 }

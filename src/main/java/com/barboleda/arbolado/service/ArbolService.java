@@ -2,7 +2,7 @@ package com.barboleda.arbolado.service;
 
 import java.util.List;
 
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 import com.barboleda.arbolado.domain.ArbolResponse;
 import com.barboleda.arbolado.domain.SearchLimits;
@@ -13,7 +13,7 @@ import com.barboleda.arbolado.domain.SearchResponse;
  * Search facade: guards, normalizes, delegates to the fixed 1000m cached path,
  * slices and wraps.
  */
-@Component
+@Service
 public class ArbolService implements ArbolSearchFacade
 {
 

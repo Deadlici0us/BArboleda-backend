@@ -59,6 +59,6 @@ public class FailOpenCacheErrorHandler implements CacheErrorHandler
         Counter counter = counters.computeIfAbsent(key, k -> registry.counter("cache.errors",
                 "operation", operation, "cache", cache.getName()));
         counter.increment();
-        log.warn("Cache {} failed on {} ({}); failing open", cache.getName(), operation, failure.toString());
+        log.warn("Cache {} failed on {} ({}); failing open", cache.getName(), operation, failure);
     }
 }

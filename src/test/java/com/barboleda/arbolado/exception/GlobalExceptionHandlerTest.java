@@ -36,7 +36,7 @@ class GlobalExceptionHandlerTest
 
     @Test
     @DisplayName("bean validation failure maps to 400")
-    void validationIs400() throws Exception
+    void validationIs400()
     {
         // Given a bound field error like the one @Valid raises
         BindingResult binding = new BeanPropertyBindingResult(new SearchRequest(0.0, 0.0), "searchRequest");
@@ -68,7 +68,7 @@ class GlobalExceptionHandlerTest
 
     @Test
     @DisplayName("wrong media type maps to 415 and wrong method to 405")
-    void mediaAndMethodMappings() throws Exception
+    void mediaAndMethodMappings()
     {
         // Given media and method mismatches
         // When handling

@@ -12,6 +12,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.LockSupport;
 import java.util.stream.IntStream;
 
 import org.junit.jupiter.api.DisplayName;
@@ -55,7 +56,9 @@ class CacheProxyTest
     @DisplayName("second identical normalized call hits the cache, not the port")
     void secondCallHitsCache()
     {
-        Arbol entity = new Arbol("x", null, 1, "Eucalyptus", 10, 40, 1, -58.3816, -34.6037, "csv", false);
+        Arbol entity = Arbol.builder().id("x").nroRegistro(1).nombreCientifico("Eucalyptus").alturaArbol(10)
+                .diametroAlturaPecho(40).comuna(1).longitude(-58.3816).latitude(-34.6037).source("csv").esMerged(false)
+                .build();
         when(port.searchNear(any(GeoCenter.class), any(RadiusMeters.class))).thenReturn(List.of(entity));
 
         SearchRequest request = new SearchRequest(-34.6037, -58.3816);
@@ -71,10 +74,12 @@ class CacheProxyTest
     @DisplayName("32 parallel cold misses single-flight to one port call")
     void parallelColdMissesSingleFlight() throws Exception
     {
-        Arbol entity = new Arbol("x", null, 1, "Eucalyptus", 10, 40, 1, -58.3816, -34.6037, "csv", false);
+        Arbol entity = Arbol.builder().id("x").nroRegistro(1).nombreCientifico("Eucalyptus").alturaArbol(10)
+                .diametroAlturaPecho(40).comuna(1).longitude(-58.3816).latitude(-34.6037).source("csv").esMerged(false)
+                .build();
         when(port.searchNear(any(GeoCenter.class), any(RadiusMeters.class))).thenAnswer(invocation ->
         {
-            Thread.sleep(50);
+            LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(50));
             return List.of(entity);
         });
 
